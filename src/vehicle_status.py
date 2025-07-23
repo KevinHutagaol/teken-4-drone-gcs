@@ -3,6 +3,7 @@ from dataclasses import dataclasses
 
 @dataclasses
 class VehicleStatus:
+    Heartbeat: bool = False
     #Vehicle Statenya
     armed: bool = False
     in_air: bool = False
@@ -16,6 +17,6 @@ class VehicleStatus:
     yaw: float = 0.0
     #Batre
     battery_voltage: float = 0.0
-    #Sesuai nama
+    battery_percentage: float = 0.0
     flight_mode: str = "Manual"
-    #tar nambah
+    
