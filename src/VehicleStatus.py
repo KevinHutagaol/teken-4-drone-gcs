@@ -5,7 +5,7 @@ from enum import Enum
 
 class FlightMode(Enum):
     MANUAL = 0
-    AUTOMATIC = 1
+    MISSION = 1
 
 
 @dataclass
