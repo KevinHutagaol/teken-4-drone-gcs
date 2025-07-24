@@ -25,4 +25,4 @@ class VehicleStatus:
     # Battery
     battery_voltage: float = 0.0
     battery_percentage: float = 0.0
-    flight_mode: FlightMode = FlightMode.AUTOMATIC
+    flight_mode: FlightMode = FlightMode.MANUAL
