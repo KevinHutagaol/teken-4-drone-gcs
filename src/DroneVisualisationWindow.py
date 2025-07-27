@@ -1,5 +1,6 @@
 from PyQt5 import Qt3DExtras, Qt3DCore
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtProperty, QPropertyAnimation
+from PyQt5.Qt3DRender import QGeometry, QMesh
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtProperty, QPropertyAnimation, QUrl
 from PyQt5.QtGui import QMatrix4x4, QVector3D, QQuaternion
 
 
@@ -89,25 +90,26 @@ class DroneVisualisationWindow(Qt3DExtras.Qt3DWindow):
         self.torusEntity.addComponent(self.torusTransform)
         self.torusEntity.addComponent(self.material)
 
-        # Sphere
-        self.sphereEntity = Qt3DCore.QEntity(self.rootEntity)
-        self.sphereMesh = Qt3DExtras.QSphereMesh()
-        self.sphereMesh.setRadius(3)
+        # Vehicle
+        self.vehicleEntity = Qt3DCore.QEntity(self.rootEntity)
+        self.vehicleMesh = QMesh()
+        self.vehicleMesh.setSource(QUrl.fromLocalFile("../resources/x500.obj"))
 
-        self.sphereTransform = Qt3DCore.QTransform()
-        self.controller = OrbitTransformController(self.sphereTransform)
-        self.controller.setTarget(self.sphereTransform)
-        self.controller.setRadius(20)
+        self.vehicleTransform = Qt3DCore.QTransform()
+        self.vehicleTransform.setScale3D(QVector3D(0, 0, 0))
+        self.controller = OrbitTransformController(self.vehicleTransform)
+        self.controller.setTarget(self.vehicleTransform)
+        self.controller.setRadius(0)
 
-        self.sphereRotateTransformAnimation = QPropertyAnimation(self.sphereTransform)
-        self.sphereRotateTransformAnimation.setTargetObject(self.controller)
-        self.sphereRotateTransformAnimation.setPropertyName(b"angle")
-        self.sphereRotateTransformAnimation.setStartValue(0)
-        self.sphereRotateTransformAnimation.setEndValue(360)
-        self.sphereRotateTransformAnimation.setDuration(10000)
-        self.sphereRotateTransformAnimation.setLoopCount(-1)
-        self.sphereRotateTransformAnimation.start()
+        self.VehicleRotateTransformAnimation = QPropertyAnimation(self.vehicleTransform)
+        self.VehicleRotateTransformAnimation.setTargetObject(self.controller)
+        self.VehicleRotateTransformAnimation.setPropertyName(b"angle")
+        self.VehicleRotateTransformAnimation.setStartValue(0)
+        self.VehicleRotateTransformAnimation.setEndValue(360)
+        self.VehicleRotateTransformAnimation.setDuration(10000)
+        self.VehicleRotateTransformAnimation.setLoopCount(-1)
+        self.VehicleRotateTransformAnimation.start()
 
-        self.sphereEntity.addComponent(self.sphereMesh)
-        self.sphereEntity.addComponent(self.sphereTransform)
-        self.sphereEntity.addComponent(self.material)
+        self.vehicleEntity.addComponent(self.vehicleMesh)
+        self.vehicleEntity.addComponent(self.vehicleTransform)
+        self.vehicleEntity.addComponent(self.material)
