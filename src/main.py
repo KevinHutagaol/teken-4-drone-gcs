@@ -9,8 +9,13 @@ from PyQt5.QtGui import QPalette, QColor, QFont, QFontDatabase
 from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QHBoxLayout, QGridLayout, QLabel, QGroupBox, \
     QVBoxLayout, QProgressBar
 
+from pymavlink import mavutil
+
+
 from VehicleStatus import VehicleStatus, FlightMode, Position, Attitude
 from DroneVisualisationWindow import DroneVisualisationWindow
+
+
 
 
 class MainWindow(QMainWindow):
@@ -265,17 +270,20 @@ class UIVehicleDirection(QGroupBox):
 
 
 
+
 if __name__ == "__main__":
     vehicle_status = VehicleStatus()
+
+    the_connection = mavutil.mavlink_connection('udpin:localhost:14540')
 
     app = QApplication(sys.argv)
 
     font_database = QFontDatabase()
 
-#    for i, font in enumerate(os.listdir("../resources/fonts")):
-       # font_database.addApplicationFont(f"../fonts/{font}")
-
+    for i, font in enumerate(os.listdir("../resources/fonts")):
+        font_database.addApplicationFont(f"../resources/fonts/{font}")
 
     view = MainWindow()
     view.show()
+
     sys.exit(app.exec())
