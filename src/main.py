@@ -272,8 +272,8 @@ if __name__ == "__main__":
 
     font_database = QFontDatabase()
 
-    for i, font in enumerate(os.listdir("../resources/fonts")):
-        font_database.addApplicationFont(f"../fonts/{font}")
+#    for i, font in enumerate(os.listdir("../resources/fonts")):
+       # font_database.addApplicationFont(f"../fonts/{font}")
 
 
     view = MainWindow()
