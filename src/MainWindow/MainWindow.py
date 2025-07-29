@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QSize, Qt, QObject
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QGridLayout, QPushButton, \
-    QToolButton, QSizePolicy
+    QToolButton, QSizePolicy, QApplication
 
 from DataLogging.DataLoggingWindow import DataLoggingWindow
 from MapDisplay.MapDisplayWindow import MapDisplayWindow
@@ -124,5 +124,9 @@ class MainWindowUI(QMainWindow):
         self.data_logging_window = DataLoggingWindow()
         self.pid_tuning_window = PidTuningWindow()
         self.map_display_window = MapDisplayWindow()
+
+    def closeEvent(self, event):
+        for window in QApplication.topLevelWidgets():
+            window.close()
 
 
