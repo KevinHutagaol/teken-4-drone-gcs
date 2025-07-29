@@ -1,3 +1,4 @@
+from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 
 
@@ -8,3 +9,5 @@ class DataLoggingWindow(QWidget):
         self.label = QLabel("--- Data Logging ---")
         layout.addWidget(self.label)
         self.setLayout(layout)
+
+        self.setMinimumSize(QSize(640, 480))
