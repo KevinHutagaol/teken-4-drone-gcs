@@ -8,7 +8,7 @@ from pymavlink import mavutil
 
 from VehicleStatus import VehicleStatus
 
-from src.MainWindow.MainWindow import MainWindowUI
+from src.MainWindow.MainWindow import MainWindow, MainWindowUI
 
 import resources_rc
 
@@ -24,8 +24,10 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
 
-    view = MainWindowUI()
+    main_view = MainWindowUI()
 
-    view.show()
+    MainWindow(view=main_view)
+
+    main_view.show()
 
     sys.exit(app.exec_())

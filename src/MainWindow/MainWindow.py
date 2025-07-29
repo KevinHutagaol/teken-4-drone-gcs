@@ -1,10 +1,40 @@
-from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QGridLayout, QPushButton
+from PyQt5.QtCore import QSize, Qt, QObject
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QGridLayout, QPushButton, \
+    QToolButton, QSizePolicy
+
+from DataLogging.DataLoggingWindow import DataLoggingWindow
+from MapDisplay.MapDisplayWindow import MapDisplayWindow
+from PidTuning.PidTuningWindow import PidTuningWindow
 
 from src.MainWindow.DroneVisualisation import DroneVisualisationUI
 from src.MainWindow.VehicleCondition import VehicleConditionUI
 from src.MainWindow.VehicleDirection import VehicleDirectionUI
 
+class MainWindow:
+    def __init__(self, view: "MainWindowUI"):
+        self._view = view
+        self._connect_window_buttons()
+
+    def _connect_window_buttons(self):
+        self._view.map_button.clicked.connect(
+            lambda checked: self._toggle_window(self._view.map_display_window, checked)
+        )
+
+        self._view.pid_tuning_button.clicked.connect(
+            lambda checked: self._toggle_window(self._view.pid_tuning_window, checked)
+        )
+
+        self._view.data_logging_button.clicked.connect(
+            lambda checked: self._toggle_window(self._view.data_logging_window, checked)
+        )
+
+    def _toggle_window(self, window, state):
+        if state:
+            window.show()
+
+        else:
+            window.hide()
 
 class MainWindowUI(QMainWindow):
     def __init__(self):
@@ -29,12 +59,29 @@ class MainWindowUI(QMainWindow):
         """)
         self.sidebar_layout = QVBoxLayout()
 
-        self.map_button = QPushButton("Map")
+        self.map_button = QToolButton()
         self.map_button.setCheckable(True)
-        self.pid_tuning_button = QPushButton("PID tuning")
+        self.map_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.map_button.setText("Map")
+        self.map_button.setIcon(QIcon(":/image-placeholder.png"))
+        self.map_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        self.map_button.setIconSize(QSize(90, 90))
+
+        self.pid_tuning_button = QToolButton()
         self.pid_tuning_button.setCheckable(True)
-        self.data_logging_button = QPushButton("Data logging")
+        self.pid_tuning_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.pid_tuning_button.setText("PID tuning")
+        self.pid_tuning_button.setIcon(QIcon(":/image-placeholder.png"))
+        self.pid_tuning_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        self.pid_tuning_button.setIconSize(QSize(90, 90))
+
+        self.data_logging_button = QToolButton()
         self.data_logging_button.setCheckable(True)
+        self.data_logging_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.data_logging_button.setText("Data logging")
+        self.data_logging_button.setIcon(QIcon(":/image-placeholder.png"))
+        self.data_logging_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        self.data_logging_button.setIconSize(QSize(90, 90))
 
         self.sidebar_layout.addWidget(self.map_button)
         self.sidebar_layout.addWidget(self.pid_tuning_button)
@@ -74,9 +121,8 @@ class MainWindowUI(QMainWindow):
 
         # OTHER WINDOWS
 
-    def toggle_window(self, window):
-        if window.isVisible():
-            window.hide()
+        self.data_logging_window = DataLoggingWindow()
+        self.pid_tuning_window = PidTuningWindow()
+        self.map_display_window = MapDisplayWindow()
 
-        else:
-            window.show()
+
