@@ -14,6 +14,7 @@ from MainWindow.MainWindow import MainWindow, MainWindowUI
 # TODO: please look for more info on this
 QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
 
+# noinspection PyUnresolvedReferences
 import resources_rc
 
 if __name__ == "__main__":
