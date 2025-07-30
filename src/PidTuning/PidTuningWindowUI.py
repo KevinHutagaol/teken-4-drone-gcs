@@ -1,8 +1,10 @@
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 
+class PidTuningWindow:
+    pass
 
-class PidTuningWindow(QWidget):
+class PidTuningWindowUI(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()

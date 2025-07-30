@@ -1,12 +1,15 @@
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 
+class DataLoggingWindow:
+    pass
 
-class MapDisplayWindow(QWidget):
+
+class DataLoggingWindowUI(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
-        self.label = QLabel("--- Map Display ---")
+        self.label = QLabel("--- Data Logging ---")
         layout.addWidget(self.label)
         self.setLayout(layout)
 
