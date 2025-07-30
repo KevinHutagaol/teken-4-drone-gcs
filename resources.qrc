@@ -1,6 +1,6 @@
 <!DOCTYPE RCC>
 <!--    Compile With    -->
-<!--    pyrcc5 .\resources.qrc -o resources_rc.py   -->
+<!--    pyrcc5 ./resources.qrc -o ./src/resources_rc.py   -->
 <RCC>
     <qresource prefix="/">
         <file alias="x500.obj">./resources/x500.obj</file>
