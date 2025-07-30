@@ -1,21 +1,20 @@
 import sys
 
 from PyQt5.QtCore import QCoreApplication, Qt
-from PyQt5.QtGui import QFontDatabase
 from PyQt5.QtWidgets import QApplication
 
 from pymavlink import mavutil
 
 from VehicleStatus import VehicleStatus
 
-from src.MainWindow.MainWindow import MainWindow, MainWindowUI
-
-import resources_rc
+from MainWindow.MainWindow import MainWindow, MainWindowUI
 
 # Stupid rendering bug in windows (apparently)
 # exit code -1073740771 (0xC000041D)
 # TODO: please look for more info on this
 QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
+
+import resources_rc
 
 if __name__ == "__main__":
     vehicle_status = VehicleStatus()

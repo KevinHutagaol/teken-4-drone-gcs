@@ -7,9 +7,9 @@ from DataLogging.DataLoggingWindow import DataLoggingWindow
 from MapDisplay.MapDisplayWindow import MapDisplayWindow
 from PidTuning.PidTuningWindow import PidTuningWindow
 
-from src.MainWindow.DroneVisualisation import DroneVisualisationUI
-from src.MainWindow.VehicleCondition import VehicleConditionUI
-from src.MainWindow.VehicleDirection import VehicleDirectionUI
+from MainWindow.DroneVisualisation import DroneVisualisationUI
+from MainWindow.VehicleCondition import VehicleConditionUI
+from MainWindow.VehicleDirection import VehicleDirectionUI
 
 class MainWindow:
     def __init__(self, view: "MainWindowUI"):

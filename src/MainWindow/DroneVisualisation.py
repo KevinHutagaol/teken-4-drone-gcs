@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGroupBox, QGridLayout, QWidget, QLabel
 
-from src.MainWindow.DroneVisualisation3DWindow import DroneVisualisation3DWindow
+from MainWindow.DroneVisualisation3DWindow import DroneVisualisation3DWindow
 
 
 class DroneVisualisationUI(QGroupBox):

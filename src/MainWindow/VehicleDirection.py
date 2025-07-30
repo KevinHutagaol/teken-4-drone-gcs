@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QGroupBox, QHBoxLayout, QWidget, QVBoxLayout, QLabel
 
-from src.VehicleStatus import FlightMode, Position, Attitude
+from VehicleStatus import FlightMode, Position, Attitude
 
 
 class VehicleDirectionUI(QGroupBox):
