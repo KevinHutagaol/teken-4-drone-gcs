@@ -1,8 +1,11 @@
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 
+class DataLoggingWindow:
+    pass
 
-class DataLoggingWindow(QWidget):
+
+class DataLoggingWindowUI(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()

@@ -3,9 +3,9 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QGridLayout, QPushButton, \
     QToolButton, QSizePolicy, QApplication
 
-from DataLogging.DataLoggingWindow import DataLoggingWindow
-from MapDisplay.MapDisplayWindow import MapDisplayWindow
-from PidTuning.PidTuningWindow import PidTuningWindow
+from DataLogging.DataLoggingWindowUI import DataLoggingWindowUI
+from MapDisplay.MapDisplayWindowUI import MapDisplayWindowUI
+from PidTuning.PidTuningWindowUI import PidTuningWindowUI
 
 from MainWindow.DroneVisualisation import DroneVisualisationUI
 from MainWindow.VehicleCondition import VehicleConditionUI
@@ -121,9 +121,9 @@ class MainWindowUI(QMainWindow):
 
         # OTHER WINDOWS
 
-        self.data_logging_window = DataLoggingWindow()
-        self.pid_tuning_window = PidTuningWindow()
-        self.map_display_window = MapDisplayWindow()
+        self.data_logging_window = DataLoggingWindowUI()
+        self.pid_tuning_window = PidTuningWindowUI()
+        self.map_display_window = MapDisplayWindowUI()
 
     def closeEvent(self, event):
         for window in QApplication.topLevelWidgets():

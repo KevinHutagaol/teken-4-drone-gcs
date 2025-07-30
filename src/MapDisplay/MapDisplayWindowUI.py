@@ -3,8 +3,10 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt5 import QtWebEngineWidgets
 import folium, folium.plugins
 
+class MapDisplayWindow:
+    pass
 
-class MapDisplayWindow(QWidget):
+class MapDisplayWindowUI(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
