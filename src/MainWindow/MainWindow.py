@@ -4,17 +4,19 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLab
     QToolButton, QSizePolicy, QApplication
 
 from DataLogging.DataLoggingWindowUI import DataLoggingWindowUI
-from MapDisplay.MapDisplayWindowUI import MapDisplayWindowUI
+from MapDisplay.MapDisplayWindowUI import MapDisplayWindow, MapDisplayWindowUI
 from PidTuning.PidTuningWindowUI import PidTuningWindowUI
 
 from MainWindow.DroneVisualisation import DroneVisualisationUI
 from MainWindow.VehicleCondition import VehicleConditionUI
 from MainWindow.VehicleDirection import VehicleDirectionUI
 
+
 class MainWindow:
     def __init__(self, view: "MainWindowUI"):
         self._view = view
         self._connect_window_buttons()
+        MapDisplayWindow(view=self._view.map_display_window, model=None)
 
     def _connect_window_buttons(self):
         self._view.map_button.clicked.connect(
@@ -35,6 +37,7 @@ class MainWindow:
 
         else:
             window.hide()
+
 
 class MainWindowUI(QMainWindow):
     def __init__(self):
@@ -128,5 +131,3 @@ class MainWindowUI(QMainWindow):
     def closeEvent(self, event):
         for window in QApplication.topLevelWidgets():
             window.close()
-
-
