@@ -1,7 +1,9 @@
+import os
 import sys
 
 from PyQt5.QtCore import QCoreApplication, Qt
 from PyQt5.QtWidgets import QApplication
+from dotenv import load_dotenv
 
 from pymavlink import mavutil
 
@@ -18,6 +20,9 @@ QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
 import resources_rc
 
 if __name__ == "__main__":
+    load_dotenv()
+
+
     vehicle_status = VehicleStatus()
 
     the_connection = mavutil.mavlink_connection('udpin:localhost:14540')
