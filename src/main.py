@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QApplication
 from pymavlink import mavutil
 
 from VehicleStatus import VehicleStatus
+from VehicleCommunication import VehicleCommunication
 
 from MainWindow.MainWindow import MainWindow, MainWindowUI
 
@@ -18,15 +19,13 @@ QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
 import resources_rc
 
 if __name__ == "__main__":
-    vehicle_status = VehicleStatus()
-
-    the_connection = mavutil.mavlink_connection('udpin:localhost:14540')
-
     app = QApplication(sys.argv)
+    mav_connection = VehicleCommunication(port='udpin:localhost:14550')
 
     main_view = MainWindowUI()
 
     MainWindow(view=main_view)
+    mav_connection.start()
 
     main_view.show()
 

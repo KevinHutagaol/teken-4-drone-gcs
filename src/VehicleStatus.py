@@ -6,6 +6,7 @@ from enum import Enum
 class FlightMode(Enum):
     MANUAL = 0
     MISSION = 1
+    LANDING = 2
 
 
 @dataclass
@@ -56,6 +57,8 @@ class VehicleStatus:
     position: Position
     # Attitude
     attitude: Attitude
+    # Velocity
+    velocity: Velocity
     # Battery
     battery_voltage: float
     battery_percentage: float
