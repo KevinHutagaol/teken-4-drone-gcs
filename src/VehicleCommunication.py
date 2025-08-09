@@ -32,14 +32,11 @@ class VehicleCommunication:
             self.connection.target_system,
             self.connection.target_component,
             data_streams, 
-            2,  # 1 Hz
-            1   # start
+            1,  # default 1 hz
+            1 
         )
 
     def start(self):
-        """
-        Start MAVLink communication
-        """
         self.running = True
         self.last_heartbeat_time = time.time()
         
@@ -79,7 +76,6 @@ class VehicleCommunication:
                 self._handle_message(msg)
 
     def _handle_message(self, msg):
-        # print(f"Received: {msg}")
         msg_type = msg.get_type()
 
         if msg_type == 'HEARTBEAT':
