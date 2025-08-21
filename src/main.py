@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     main_view = MainWindowUI()
 
-    MainWindow(view=main_view)
+    main_view_controller = MainWindow(view=main_view)
     mav_connection.start()
 
     main_view.show()
