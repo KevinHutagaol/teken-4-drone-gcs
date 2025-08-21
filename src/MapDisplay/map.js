@@ -56,15 +56,18 @@ mouse_position.options["lngFormatter"] =
 
 map.addControl(mouse_position);
 
-
 // logic
 
 let handler;
 
 new QWebChannel(qt.webChannelTransport, channel => {
+    window.handler = channel.objects.handler;
+
+    map.on('click', e => {
+        console.log(e.latlng)
+        window.handler.send_click_coordinates(e.latlng)
+    })
+
 
 })
 
-map.on('click', e => {
-    console.log(e.latlng)
-})
