@@ -18,49 +18,21 @@
     <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 
-    <style>
-        #map {
-            position: relative;
-            width: 100.0%;
-            height: 100.0%;
-            left: 0.0%;
-            top: 0.0%;
-        }
 
-        .leaflet-container {
-            font-size: 1rem;
-        }
-    </style>
-
-    <style>
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-    </style>
-
-    <style>
-        #map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            right: 0;
-            left: 0;
-        }
-    </style>
 
     <script>
         L_NO_TOUCH = false;
         L_DISABLE_3D = false;
     </script>
 
+    <link rel="stylesheet" href="qrc:///map.css">
+
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-realtime/2.2.0/leaflet-realtime.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/ardhi/Leaflet.MousePosition/src/L.Control.MousePosition.min.js"></script>
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/ardhi/Leaflet.MousePosition/src/L.Control.MousePosition.min.css"/>
+    <script src="https://unpkg.com/leaflet-ant-path" type="text/javascript"></script>
 
     <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
 </head>

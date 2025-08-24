@@ -56,9 +56,110 @@ mouse_position.options["lngFormatter"] =
 
 map.addControl(mouse_position);
 
+let droneIcon = L.icon({
+    iconUrl: "qrc:///drone-icon.png",
+
+    iconSize: [51, 51], iconAnchor: [25, 25]
+})
+
+const grayColor = '#56586c'
+const redColor = '#cc0909'
+
+const grayMarkerHtmlStyles = `
+  background-color: ${grayColor};
+  width: 3rem;
+  height: 3rem;
+  display: block;
+  left: -1.5rem;
+  top: -1.5rem;
+  position: relative;
+  border-radius: 3rem 3rem 0;
+  transform: rotate(45deg);
+  border: 1px solid #FFFFFF`
+
+const redMarkerHtmlStyles = `
+  background-color: ${redColor};
+  width: 3rem;
+  height: 3rem;
+  display: block;
+  left: -1.5rem;
+  top: -1.5rem;
+  position: relative;
+  border-radius: 3rem 3rem 0;
+  transform: rotate(45deg);
+  border: 1px solid #FFFFFF`
+
+const redIcon = L.divIcon({
+    className: "my-custom-pin",
+    iconAnchor: [0, 24],
+    labelAnchor: [-6, 0],
+    popupAnchor: [0, -36],
+    html: `<span style="${redMarkerHtmlStyles}" />`
+})
+
+const grayIcon = L.divIcon({
+    className: "my-custom-pin",
+    iconAnchor: [0, 24],
+    labelAnchor: [-6, 0],
+    popupAnchor: [0, -36],
+    html: `<span style="${grayMarkerHtmlStyles}" />`
+})
+
+
 // logic
 
-let handler;
+let isAddWaypointButtonChecked = false
+
+function map_on_add_waypoint_button_clicked(checked) {
+    isAddWaypointButtonChecked = checked;
+
+    if (checked) {
+        document.querySelector(".leaflet-container").style.cursor = "crosshair";
+    } else {
+        document.querySelector(".leaflet-container").style.cursor = "";
+    }
+}
+
+let markersGroup = L.layerGroup();
+map.addLayer(markersGroup);
+
+let path;
+
+function renderMarkers(dronePosition, positions, highlightedMarker) {
+
+    markersGroup.clearLayers();
+
+    L.marker(dronePosition, {icon: droneIcon}).addTo(map);
+
+
+    positions.forEach((pos, i) => {
+        if (i === highlightedMarker) {
+            L.marker([pos[0], pos[1]], {icon: redIcon}).addTo(markersGroup);
+        } else {
+            L.marker([pos[0], pos[1]], {icon: grayIcon}).addTo(markersGroup);
+        }
+    })
+
+    if (path) {
+        map.removeLayer(path);
+    }
+
+    path = L.polyline.antPath([dronePosition].concat(positions), {
+        "delay": 1000,
+        "dashArray": [10, 20],
+        "weight": 5,
+        "color": "#0000FF",
+        "pulseColor": "#FFFFFF",
+        "paused": false,
+        "reverse": false,
+        "hardwareAccelerated": true
+    });
+
+    map.addLayer(path);
+
+
+}
+
 
 new QWebChannel(qt.webChannelTransport, channel => {
     window.handler = channel.objects.handler;
