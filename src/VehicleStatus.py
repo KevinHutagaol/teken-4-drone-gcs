@@ -6,6 +6,7 @@ from enum import Enum
 class FlightMode(Enum):
     MANUAL = 0
     MISSION = 1
+    LANDING = 2
 
 
 @dataclass
@@ -35,6 +36,17 @@ class Attitude:
 
     # TODO: More stuff that is useful for attitude
 
+@dataclass
+class Velocity:
+    vx: float = 0.0
+    vy: float = 0.0
+    vz: float = 0.0
+    
+    def __init__(self, vx, vy, vz):
+        self.vx = vx
+        self.vy = vy
+        self.vz = vz
+
 
 class VehicleStatus:
     heartbeat: bool
@@ -45,6 +57,8 @@ class VehicleStatus:
     position: Position
     # Attitude
     attitude: Attitude
+    # Velocity
+    velocity: Velocity
     # Battery
     battery_voltage: float
     battery_percentage: float

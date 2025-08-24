@@ -1,0 +1,28 @@
+[project]
+name = "teken4gcs"
+version = "1.0"
+requires-python = ">= 3.12"
+dependencies = [
+    "pyqt5",
+    "pyqt3d",
+    "pyqtwebengine",
+    "pymavlink",
+    "matplotlib",
+    "numpy",
+    "folium",
+    "dotenv",
+    "pyqtgraph"
+]
+
+readme = "README.md"
+
+authors = [
+    { name = "Kevin Imanuel Hutagaol" },
+    { name = "Tsaqif Rizky Muhammad" },
+    { name = "Muhamamd Alif Iqbal" },
+    { name = "Muhammad Rafly Fadhillah Irsa" },
+]
+
+[project.urls]
+Repository = "https://github.com/KevinHutagaol/teken-4-drone-gcs"
+
