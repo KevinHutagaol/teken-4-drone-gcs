@@ -9,6 +9,7 @@ from pymavlink import mavutil
 
 from VehicleStatus import VehicleStatus
 from VehicleCommunication import VehicleCommunication
+from VehicleControl import VehicleControl
 
 from MainWindow.MainWindow import MainWindow, MainWindowUI
 
@@ -28,9 +29,11 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     mav_connection = VehicleCommunication(port='udpin:localhost:14550')
 
+    vehicle_control = VehicleControl()
+
     main_view = MainWindowUI()
 
-    main_view_controller = MainWindow(view=main_view)
+    main_view_controller = MainWindow(view=main_view, model=vehicle_control)
     mav_connection.start()
 
     main_view.show()
