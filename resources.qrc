@@ -5,6 +5,7 @@
     <qresource prefix="/">
         <file alias="x500.obj">./resources/x500.obj</file>
         <file alias="drone-icon.png">./resources/drone-icon.png</file>
+        <file alias="clock_00.png">./resources/clock_00.png</file>
         <file alias="image-placeholder.png">./resources/image-placeholder.png</file>
         <file alias="map.html">./src/MapDisplay/map.html</file>
         <file alias="map.js">./src/MapDisplay/map.js</file>

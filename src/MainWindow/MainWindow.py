@@ -38,6 +38,10 @@ class MainWindow:
             lambda checked: self._toggle_window(self._view.data_logging_window, checked)
         )
 
+        self._view.data_logging_window.window_closed_signal.connect(
+            lambda : self._view.set_data_log_checked(False)
+        )
+
     @staticmethod
     def _toggle_window(window, state):
         if state:
@@ -140,6 +144,11 @@ class MainWindowUI(QMainWindow):
     @pyqtSlot(bool)
     def set_map_button_checked(self, checked):
         self.map_button.setChecked(checked)
+
+    @pyqtSlot(bool)
+    def set_data_log_checked(self, checked):
+        self.data_logging_button.setChecked(checked)
+
 
 
     def closeEvent(self, event):
