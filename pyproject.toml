@@ -9,7 +9,8 @@ dependencies = [
     "pymavlink",
     "matplotlib",
     "numpy",
-    "folium"
+    "folium",
+    "dotenv"
 ]
 
 readme = "README.md"

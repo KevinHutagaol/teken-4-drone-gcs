@@ -1,24 +1,33 @@
-from PyQt5.QtCore import QSize, Qt, QObject
+from PyQt5.QtCore import QSize, Qt, QObject, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QGridLayout, QPushButton, \
     QToolButton, QSizePolicy, QApplication
 
 from DataLogging.DataLoggingWindowUI import DataLoggingWindowUI
-from MapDisplay.MapDisplayWindowUI import MapDisplayWindowUI
+from MapDisplay.MapDisplayWindowUI import MapDisplayWindow, MapDisplayWindowUI
 from PidTuning.PidTuningWindowUI import PidTuningWindowUI
+
+from VehicleControl import VehicleControl
 
 from MainWindow.DroneVisualisation import DroneVisualisationUI
 from MainWindow.VehicleCondition import VehicleConditionUI
 from MainWindow.VehicleDirection import VehicleDirectionUI
 
+
 class MainWindow:
-    def __init__(self, view: "MainWindowUI"):
+    def __init__(self, view: "MainWindowUI", model: "VehicleControl"):
         self._view = view
+        self.map_display_window_controller = MapDisplayWindow(view=self._view.map_display_window, model=model)
+
         self._connect_window_buttons()
 
     def _connect_window_buttons(self):
         self._view.map_button.clicked.connect(
             lambda checked: self._toggle_window(self._view.map_display_window, checked)
+        )
+
+        self._view.map_display_window.window_closed_signal.connect(
+            lambda : self._view.set_map_button_checked(False),
         )
 
         self._view.pid_tuning_button.clicked.connect(
@@ -29,12 +38,14 @@ class MainWindow:
             lambda checked: self._toggle_window(self._view.data_logging_window, checked)
         )
 
-    def _toggle_window(self, window, state):
+    @staticmethod
+    def _toggle_window(window, state):
         if state:
             window.show()
 
         else:
             window.hide()
+
 
 class MainWindowUI(QMainWindow):
     def __init__(self):
@@ -125,8 +136,17 @@ class MainWindowUI(QMainWindow):
         self.pid_tuning_window = PidTuningWindowUI()
         self.map_display_window = MapDisplayWindowUI()
 
+
+    @pyqtSlot(bool)
+    def set_map_button_checked(self, checked):
+        self.map_button.setChecked(checked)
+
+
     def closeEvent(self, event):
-        for window in QApplication.topLevelWidgets():
-            window.close()
+        event.ignore()
 
+        self.data_logging_window.close()
+        self.map_display_window.close()
+        self.pid_tuning_window.close()
 
+        super().closeEvent(event)
