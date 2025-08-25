@@ -1,26 +1,27 @@
 import json
 
-from PyQt5 import QtCore
-
-from PyQt5.QtCore import QSize, QUrl, QObject, pyqtSlot, QVariant, pyqtSignal, QModelIndex
+from PyQt5.QtCore import QSize, QUrl, QObject, pyqtSlot, QVariant, pyqtSignal
 from PyQt5.QtGui import QDoubleValidator
 from PyQt5.QtWebChannel import QWebChannel
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtWidgets import QWidget, QLabel, QSizePolicy, QHBoxLayout, QVBoxLayout, QGroupBox, QTextEdit, QListWidget, \
-    QListWidgetItem, QPushButton, QScrollArea, QTreeWidget, QTreeWidgetItem, QHeaderView, QLineEdit
+from PyQt5.QtWidgets import QWidget, QLabel, QSizePolicy, QHBoxLayout, QVBoxLayout, QGroupBox, QPushButton, QTreeWidget, \
+    QTreeWidgetItem, QHeaderView, QLineEdit, QButtonGroup
+from matplotlib.pyplot import connect
 
-from VehicleControl import VehicleControl, WaypointListItem
+from VehicleControl import VehicleControl
 from VehicleStatus import Position
 
 
-class MapDisplayWindow:
+class MapDisplayWindow(QObject):
     is_add_waypoint_button_checked = False
 
     def __init__(self, view: 'MapDisplayWindowUI', model: 'VehicleControl'):
+        super().__init__()
         self._view = view
         self._model = model
-        self._setup_map_logic()
+        self._view.connect_signals_and_slots()
 
+        self._setup_map_logic()
 
     def _setup_map_logic(self):
         self._view.map_finished_loading_signal.connect(self._init_map)
@@ -30,21 +31,28 @@ class MapDisplayWindow:
 
         self._view.add_waypoint_button_clicked_signal.connect(self._on_add_waypoint_button_clicked)
 
-        # self._view.list_current_item_changed_signal.connect(self.list_current_item_changed_slot)
+        self._view.list_current_item_changed_signal.connect(self._on_list_current_item_changed_slot)
+
+        self._view.button_group_clicked_signal.connect(self._on_del_button_group_clicked)
 
         self.update_map_on_drone_move()
-
-    def _on_add_waypoint_button_clicked(self, checked):
-        self.is_add_waypoint_button_checked = checked
-        self._view.map_on_add_waypoint_button_clicked(checked)
 
     def update_map_on_drone_move(self):
         self._view.render_waypoints_ui(self._model.get_current_pos(), self._model.get_waypoints(), -1)
 
-    @pyqtSlot(QObject)
-    def list_current_item_changed_slot(self, e):
-        print(e)
+    @pyqtSlot(bool)
+    def _on_add_waypoint_button_clicked(self, checked):
+        self.is_add_waypoint_button_checked = checked
+        self._view.map_on_add_waypoint_button_clicked(checked)
 
+    @pyqtSlot(QTreeWidgetItem, QTreeWidgetItem)
+    def _on_list_current_item_changed_slot(self, curr: 'QTreeWidgetItem', _):
+        if curr is not None:
+            selected_item = curr.data(0, 0)
+
+            self._view.render_waypoints_ui(self._model.get_current_pos(), self._model.get_waypoints(), selected_item)
+
+    @pyqtSlot(QVariant)
     def _on_map_clicked(self, args):
         if not self.is_add_waypoint_button_checked:
             return
@@ -60,12 +68,19 @@ class MapDisplayWindow:
         self._model.add_waypoint_to_end(Position(args['lat'], args['lng'], alt_val))
 
         self._view.render_waypoints_ui(self._model.get_current_pos(), self._model.get_waypoints(), -1)
+        self._view.render_list_ui(self._model.get_waypoints())
 
-        print(self._view.get_current_selected_list_item().data())
-
+        # print(self._view.get_current_selected_list_item().data())
 
         self.is_add_waypoint_button_checked = False
         self._view.map_on_add_waypoint_button_clicked(False)
+
+    @pyqtSlot(int)
+    def _on_del_button_group_clicked(self, button_id):
+        print(button_id)
+        self._model.remove_waypoint(button_id)
+        self._view.render_waypoints_ui(self._model.get_current_pos(), self._model.get_waypoints(), -1)
+        self._view.render_list_ui(self._model.get_waypoints())
 
 
 class MapDisplayWindowUI(QWidget):
@@ -77,7 +92,9 @@ class MapDisplayWindowUI(QWidget):
 
     add_waypoint_button_clicked_signal = pyqtSignal(bool)
 
-    list_current_item_changed_signal = pyqtSignal(QObject)
+    list_current_item_changed_signal = pyqtSignal(QTreeWidgetItem, QTreeWidgetItem)
+
+    button_group_clicked_signal = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
@@ -154,6 +171,8 @@ class MapDisplayWindowUI(QWidget):
         self.list.setColumnWidth(3, 67)
         self.list.setColumnWidth(4, 10)
 
+        self.delete_list_item_button_group = QButtonGroup()
+        self.delete_list_item_button_group.setExclusive(False)
         self.q_tree_widget_items: list['QTreeWidgetItem'] = []
 
         # self.list.currentItemChanged.connect(lambda x: print(x.text()))
@@ -216,13 +235,12 @@ class MapDisplayWindowUI(QWidget):
 
         self.setMinimumSize(QSize(640, 480))
 
-        self._connect_signals_and_slots()
-
-    def _connect_signals_and_slots(self):
+    def connect_signals_and_slots(self):
         self.map_widget.handler.map_clicked.connect(self.map_clicked_signal)
         self.add_waypoint_button.clicked.connect(self.add_waypoint_button_clicked_signal)
         self.map_widget.loadFinished.connect(self.map_finished_loading_signal)
-        # self.list.currentItemChanged.connect(self.list_current_item_changed_signal)
+        self.list.currentItemChanged.connect(self.list_current_item_changed_signal)
+        self.delete_list_item_button_group.idClicked.connect(self.button_group_clicked_signal)
 
     def map_on_add_waypoint_button_clicked(self, checked):
         self.map_widget.page().runJavaScript(f"map_on_add_waypoint_button_clicked({"true" if checked else "false"})")
@@ -242,39 +260,53 @@ class MapDisplayWindowUI(QWidget):
     def get_current_selected_list_item(self):
         return self.list.currentIndex()
 
-    def render_waypoints_ui(self, drone_position: 'Position', waypoints: list['WaypointListItem'],
-                            selectedItemNumber: int):
+    def render_list_ui(self, waypoints: list['Position']):
+        for button in self.delete_list_item_button_group.buttons():
+            self.delete_list_item_button_group.removeButton(button)
+
         self.list.clear()
+        self.q_tree_widget_items = []
+
+        for i, waypoint in enumerate(waypoints):
+            item = QTreeWidgetItem()
+            item.setText(0, f"{i}")
+            item.setText(1, f"{waypoint.latitude:.6f}°")
+            item.setText(2, f"{waypoint.longitude:.6f}°")
+            item.setText(3, f"{waypoint.altitude:.2f}m")
+
+            self.q_tree_widget_items.append(item)
+
+            self.list.addTopLevelItem(item)
+
+            button = QPushButton("X")
+
+            self.delete_list_item_button_group.addButton(button, i)
+
+            self.list.setItemWidget(item, 4, button)
+
+            # print(self.delete_list_item_button_group.buttons())
+
+
+    def render_waypoints_ui(self, drone_position: 'Position', waypoints: list['Position'],
+                            selected_item_num: int):
+
         self.q_tree_widget_items = []
 
         waypoint_js_repr = []
         drone_position_js_repr = [drone_position.latitude, drone_position.longitude]
 
         for waypoint in waypoints:
-            item = QTreeWidgetItem()
-            item.setText(0, f"{waypoint['num']}")
-            item.setText(1, f"{waypoint['waypoint'].latitude:.6f}°")
-            item.setText(2, f"{waypoint['waypoint'].longitude:.6f}°")
-            item.setText(3, f"{waypoint['waypoint'].altitude:.2f}m")
+            waypoint_js_repr.append([waypoint.latitude, waypoint.longitude])
 
-            self.q_tree_widget_items.append(item)
-
-            self.list.addTopLevelItem(item)
-
-            self.list.setItemWidget(item, 4, QPushButton("X"))
-
-            waypoint_js_repr.append([waypoint['waypoint'].latitude, waypoint['waypoint'].longitude])
 
         self.map_widget.page().runJavaScript(
-            f'renderMarkers({json.dumps(drone_position_js_repr)},{json.dumps(waypoint_js_repr)}, {selectedItemNumber})'
+            f'renderMarkers({json.dumps(drone_position_js_repr)},{json.dumps(waypoint_js_repr)}, {selected_item_num})'
         )
 
     def closeEvent(self, e):
         e.ignore()
         self.hide()
         self.window_closed_signal.emit()
-
-
 
 
 class CallHandler(QObject):
