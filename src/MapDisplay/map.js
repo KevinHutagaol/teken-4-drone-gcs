@@ -140,6 +140,9 @@ function renderMarkers(dronePosition, positions, highlightedMarker) {
         }
     })
 
+}
+
+function renderPolyLine(dronePosition, positions) {
     if (path) {
         map.removeLayer(path);
     }
@@ -156,8 +159,6 @@ function renderMarkers(dronePosition, positions, highlightedMarker) {
     });
 
     map.addLayer(path);
-
-
 }
 
 

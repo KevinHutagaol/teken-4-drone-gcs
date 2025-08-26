@@ -2,17 +2,18 @@ from VehicleStatus import Position
 
 from typing import TypedDict
 
-class WaypointListItem(TypedDict):
-    num: int
-    waypoint: Position
-
 class VehicleControl:
     _current_pos: 'Position' = Position(-6.200000,106.816666,20)
 
-    _waypoints: list['WaypointListItem'] = []
+    _waypoints: list['Position'] = []
 
     def add_waypoint_to_end(self, new_pos: 'Position'):
-        self._waypoints.append({'num': len(self._waypoints), 'waypoint': new_pos})
+        self._waypoints.append(new_pos)
+
+    def remove_waypoint(self, index: int):
+        self._waypoints.pop(index)
+        for i, waypoint in enumerate(self._waypoints):
+            waypoint
 
     def get_waypoints(self):
         return self._waypoints
