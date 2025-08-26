@@ -3,10 +3,10 @@ import sys
 from PyQt5.QtCore import QCoreApplication, Qt
 from PyQt5.QtWidgets import QApplication
 
-from pymavlink import mavutil
+import time
 
 from VehicleStatus import VehicleStatus
-from VehicleCommunication import VehicleCommunication
+from DroneModel import DroneModel
 
 from MainWindow.MainWindow import MainWindow, MainWindowUI
 
@@ -20,13 +20,30 @@ import resources_rc
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    mav_connection = VehicleCommunication(port='udpin:localhost:14550')
-
+    drone = DroneModel("udp://:14540")
+    
     main_view = MainWindowUI()
-
     MainWindow(view=main_view)
-    mav_connection.start()
-
+    
+    # Start the drone's async loop first
+    drone.start()
     main_view.show()
+    
+    timeout = 15 
 
+    while not drone.vehicle_status.heartbeat:
+        print("Waiting for heartbeat...")
+        time.sleep(0.5)
+        app.processEvents()
+    
+    if drone.vehicle_status.heartbeat:
+        drone.arm_sync()
+        time.sleep(10)
+        drone.takeoff_sync(5.0) 
+        time.sleep(5)
+        drone.land_sync()
+    
     sys.exit(app.exec_())
+
+
+    
