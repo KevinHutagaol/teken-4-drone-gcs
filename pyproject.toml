@@ -10,16 +10,18 @@ dependencies = [
     "mavsdk",
     "matplotlib",
     "numpy",
-    "folium"
+    "folium",
+    "dotenv",
+    "pyqtgraph"
 ]
 
 readme = "README.md"
 
 authors = [
     { name = "Kevin Imanuel Hutagaol" },
-    { name = "Tsaqif Rizky Muhamad" },
-    { name = "Alif Iqbal" },
-    { name = "Muhamad Rafly Irsa" },
+    { name = "Tsaqif Rizky Muhammad" },
+    { name = "Muhamamd Alif Iqbal" },
+    { name = "Muhammad Rafly Fadhillah Irsa" },
 ]
 
 [project.urls]
