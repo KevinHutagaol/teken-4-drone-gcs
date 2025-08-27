@@ -27,7 +27,7 @@ if __name__ == "__main__":
     drone = DroneModel("udpin://0.0.0.0:14540")
     
     main_view = MainWindowUI()
-    MainWindow(view=main_view)
+    MainWindow(view=main_view, model=drone)
     
     drone.start()
     main_view.show()

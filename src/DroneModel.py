@@ -33,7 +33,7 @@ class DroneModel:
         self.vehicle_status.heartbeat = False
         self.vehicle_status.armed = False
         self.vehicle_status.in_air = False
-        self.vehicle_status.position = Position(0.0, 0.0, 0.0)
+        self.vehicle_status.position = Position(6.366, 106.825, 0.0)
         self.vehicle_status.attitude = Attitude(0.0, 0.0, 0.0)
         self.vehicle_status.velocity = Velocity(0.0, 0.0, 0.0)
         self.vehicle_status.battery_percentage = 0.0
