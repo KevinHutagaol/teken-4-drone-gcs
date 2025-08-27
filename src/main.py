@@ -4,7 +4,7 @@ from PyQt5.QtCore import QCoreApplication, Qt
 from PyQt5.QtWidgets import QApplication
 
 import time
-
+import asyncio
 from VehicleStatus import VehicleStatus
 from DroneModel import DroneModel
 
@@ -20,12 +20,11 @@ import resources_rc
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    drone = DroneModel("udp://:14540")
+    drone = DroneModel("udpin://0.0.0.0:14540")
     
     main_view = MainWindowUI()
     MainWindow(view=main_view)
     
-    # Start the drone's async loop first
     drone.start()
     main_view.show()
     
@@ -38,12 +37,9 @@ if __name__ == "__main__":
     
     if drone.vehicle_status.heartbeat:
         drone.arm_sync()
-        time.sleep(10)
-        drone.takeoff_sync(5.0) 
-        time.sleep(5)
-        drone.land_sync()
-    
+        drone.takeoff_sync(5)
     sys.exit(app.exec_())
+
 
 
     
