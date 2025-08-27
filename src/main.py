@@ -1,5 +1,6 @@
 import os
 import sys
+import signal
 
 from PyQt5.QtCore import QCoreApplication, Qt
 from PyQt5.QtWidgets import QApplication
@@ -21,10 +22,13 @@ QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
 # noinspection PyUnresolvedReferences
 import resources_rc
 
-if __name__ == "__main__":
-    load_dotenv()
+def sigint_handler(*args):
+    print("Shutting Down")
+    QApplication.quit()
 
-    the_connection = mavutil.mavlink_connection('udpin:localhost:14540')
+if __name__ == "__main__":
+    signal.signal(signal.SIGINT, sigint_handler)
+    load_dotenv()
 
     app = QApplication(sys.argv)
     mav_connection = VehicleCommunication(port='udpin:localhost:14550')
@@ -39,3 +43,4 @@ if __name__ == "__main__":
     main_view.show()
 
     sys.exit(app.exec_())
+
