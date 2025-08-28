@@ -6,11 +6,10 @@ from PyQt5.QtCore import QCoreApplication, Qt
 from PyQt5.QtWidgets import QApplication
 from dotenv import load_dotenv
 
-from pymavlink import mavutil
-
+import time
+import asyncio
 from VehicleStatus import VehicleStatus
-from VehicleCommunication import VehicleCommunication
-from VehicleControl import VehicleControl
+from DroneModel import DroneModel
 
 from MainWindow.MainWindow import MainWindow, MainWindowUI
 
@@ -31,16 +30,22 @@ if __name__ == "__main__":
     load_dotenv()
 
     app = QApplication(sys.argv)
-    mav_connection = VehicleCommunication(port='udpin:localhost:14550')
-
-    vehicle_control = VehicleControl()
+    drone = DroneModel("udpin://0.0.0.0:14540")
 
     main_view = MainWindowUI()
+    MainWindow(view=main_view, model=drone)
 
-    main_view_controller = MainWindow(view=main_view, model=vehicle_control)
-    mav_connection.start()
-
+    drone.start()
     main_view.show()
 
-    sys.exit(app.exec_())
+    timeout = 15
 
+    while not drone.vehicle_status.heartbeat:
+        print("Waiting for heartbeat...")
+        time.sleep(0.5)
+        app.processEvents()
+
+    if drone.vehicle_status.heartbeat:
+        drone.arm_sync()
+        drone.takeoff_sync(5)
+    sys.exit(app.exec_())

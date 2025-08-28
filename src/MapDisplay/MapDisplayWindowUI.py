@@ -6,16 +6,15 @@ from PyQt5.QtWebChannel import QWebChannel
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QWidget, QLabel, QSizePolicy, QHBoxLayout, QVBoxLayout, QGroupBox, QPushButton, QTreeWidget, \
     QTreeWidgetItem, QHeaderView, QLineEdit, QButtonGroup
-from matplotlib.pyplot import connect
 
-from VehicleControl import VehicleControl
 from VehicleStatus import Position
+from DroneModel import DroneModel, WaypointListItem
 
 
 class MapDisplayWindow(QObject):
     is_add_waypoint_button_checked = False
 
-    def __init__(self, view: 'MapDisplayWindowUI', model: 'VehicleControl'):
+    def __init__(self, view: 'MapDisplayWindowUI', model: "DroneModel"):
         super().__init__()
         self._view = view
         self._model = model
@@ -247,7 +246,7 @@ class MapDisplayWindowUI(QWidget):
         self.delete_list_item_button_group.idClicked.connect(self.button_group_clicked_signal)
 
     def map_on_add_waypoint_button_clicked(self, checked):
-        self.map_widget.page().runJavaScript(f"map_on_add_waypoint_button_clicked({"true" if checked else "false"})")
+        self.map_widget.page().runJavaScript(f"map_on_add_waypoint_button_clicked({'true' if checked else 'false'})")
         self.add_waypoint_button.setChecked(checked)
 
     def get_alt_text_input_value(self) -> float | None:
