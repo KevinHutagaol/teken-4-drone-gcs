@@ -40,11 +40,6 @@ if __name__ == "__main__":
 
     timeout = 15
 
-    while not drone.vehicle_status.heartbeat:
-        print("Waiting for heartbeat...")
-        time.sleep(0.5)
-        app.processEvents()
-
     if drone.vehicle_status.heartbeat:
         drone.arm_sync()
         drone.takeoff_sync(5)

@@ -1,26 +1,34 @@
 import threading
 import asyncio
 import math
-from typing import TypedDict
-from VehicleStatus import VehicleStatus, FlightMode, Position, Attitude, Velocity    
+from VehicleStatus import VehicleStatus, FlightMode, Position, Attitude, Velocity
 from mavsdk import System
 from mavsdk.action import ActionError
 
 
-class WaypointListItem(TypedDict):
-    num: int
-    waypoint: Position
-
 
 class DroneModel:
+    _waypoints: list['Position'] = []
+    _current_position: 'Position' = Position(-6.200000, 106.816666, 10)
+
+    def add_waypoint_to_end(self, new_pos: 'Position'):
+        self._waypoints.append(new_pos)
+
+    def remove_waypoint(self, index: int):
+        self._waypoints.pop(index)
+
+    def get_waypoints(self):
+        return self._waypoints
+
+    def get_current_position(self):
+        return self._current_position
+
     def __init__(self, connection_address: str = "udp://:14540"):
         self.drone = System()
         self.connection_address = connection_address
         self.connected = False
         self.coordinates = []
-        self._current_pos = Position(0, 0, 0)
-        self._waypoints = []
-        
+
         self.running = False
         self.main_task = None
         self.event_loop = None
@@ -466,18 +474,6 @@ class DroneModel:
 
     def status(self):
         return self.vehicle_status
-
-    def add_waypoint_to_end(self, new_pos: Position):
-        self._waypoints.append({'num': len(self._waypoints), 'waypoint': new_pos})
-
-    def get_waypoints(self):
-        return self._waypoints
-
-    def set_current_pos(self, pos: Position):
-        self._current_pos = pos
-
-    def get_current_pos(self):
-        return self._current_pos
 
     async def arm(self):
         try:
