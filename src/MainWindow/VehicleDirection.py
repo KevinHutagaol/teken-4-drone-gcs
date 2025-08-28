@@ -1,7 +1,13 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QGroupBox, QHBoxLayout, QWidget, QVBoxLayout, QLabel
+from PyQt5.QtCore import Qt, QObject
+from PyQt5.QtWidgets import QGroupBox, QHBoxLayout, QWidget, QVBoxLayout, QLabel, QGridLayout, QSizePolicy, \
+    QGraphicsDropShadowEffect
 
 from VehicleStatus import FlightMode, Position, Attitude
+
+
+class VehicleDirectionController(QObject):
+    def __init__(self):
+        super().__init__()
 
 
 class VehicleDirectionUI(QGroupBox):
@@ -31,9 +37,13 @@ class VehicleDirectionUI(QGroupBox):
         font_temp.setBold(True)
         self.setFont(font_temp)
 
-        layout = QHBoxLayout()
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        layout = QGridLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.setSpacing(40)
+        layout.setSpacing(0)
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 1)
 
         # ---
         self.flight_mode = FlightMode.MANUAL
@@ -46,7 +56,7 @@ class VehicleDirectionUI(QGroupBox):
         self.flight_mode_label = QLabel(f'{"Manual" if FlightMode.MANUAL else "Mission"} Mode')
         self.flight_mode_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.flight_mode_layout.addWidget(self.flight_mode_label)
-        layout.addWidget(self.flight_mode_widget)
+        layout.addWidget(self.flight_mode_widget, 0, 0)
 
         # ---
         self.position: Position = Position(0, 0, 0)
@@ -75,7 +85,7 @@ class VehicleDirectionUI(QGroupBox):
             self.position_titles_labels[pos]["label"].setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.position_layout.addWidget(wid)
 
-        layout.addWidget(self.position_widget)
+        layout.addWidget(self.position_widget, 0, 1)
 
         # ---
         self.attitude: Attitude = Attitude(0, 0, 0)
@@ -86,6 +96,9 @@ class VehicleDirectionUI(QGroupBox):
                 border-radius: 10px;
             }
         """)
+        # self.box_shadow = QGraphicsDropShadowEffect()
+        # self.box_shadow.setBlurRadius(5)
+        # self.attitude_widget.setGraphicsEffect(self.box_shadow)
         self.attitude_layout = QHBoxLayout()
         self.attitude_widget.setLayout(self.attitude_layout)
         self.attitude_titles_labels = {
@@ -104,6 +117,6 @@ class VehicleDirectionUI(QGroupBox):
             self.attitude_titles_labels[pos]["label"].setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.attitude_layout.addWidget(wid)
 
-        layout.addWidget(self.attitude_widget)
+        layout.addWidget(self.attitude_widget, 1, 0)
 
         self.setLayout(layout)
