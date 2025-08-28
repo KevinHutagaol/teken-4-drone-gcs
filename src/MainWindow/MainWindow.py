@@ -14,8 +14,9 @@ from MainWindow.VehicleCondition import VehicleConditionUI
 from MainWindow.VehicleDirection import VehicleDirectionUI
 
 
-class MainWindow:
+class MainWindow(QObject):
     def __init__(self, view: "MainWindowUI", model: "DroneModel"):
+        super().__init__()
         self._view = view
         self.map_display_window_controller = MapDisplayWindow(view=self._view.map_display_window, model=model)
 
