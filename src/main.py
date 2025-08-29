@@ -21,9 +21,12 @@ QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
 # noinspection PyUnresolvedReferences
 import resources_rc
 
+
 def sigint_handler(*args):
     print("Shutting Down")
     QApplication.quit()
+    exit(0)
+
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, sigint_handler)
@@ -40,7 +43,13 @@ if __name__ == "__main__":
 
     timeout = 15
 
-    if drone._vehicle_status.heartbeat:
+    while not drone.get_vehicle_status().heartbeat:
+        print("Waiting for heartbeat...")
+        time.sleep(0.5)
+        app.processEvents()
+
+    if drone.get_vehicle_status().heartbeat:
         drone.arm_sync()
         drone.takeoff_sync(5)
+
     sys.exit(app.exec_())

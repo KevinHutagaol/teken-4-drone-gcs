@@ -18,7 +18,10 @@ class MainWindow(QObject):
     def __init__(self, view: "MainWindowUI", model: "DroneModel"):
         super().__init__()
         self._view = view
-        self.map_display_window_controller = MapDisplayWindow(view=self._view.map_display_window, model=model)
+        self._model = model
+        self.map_display_window_controller = MapDisplayWindow(view=self._view.map_display_window, model=self._model)
+
+        self._model._update_ui_callback
 
         self._connect_window_buttons()
 
@@ -42,6 +45,12 @@ class MainWindow(QObject):
         self._view.data_logging_window.window_closed_signal.connect(
             lambda : self._view.set_data_log_checked(False)
         )
+
+    def update_ui(self):
+        self.update_map_display_ui()
+
+    def update_map_display_ui(self):
+        self.map_display_window_controller.update_map_on_drone_move()
 
     @staticmethod
     def _toggle_window(window, state):

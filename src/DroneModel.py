@@ -34,7 +34,7 @@ class DroneModel:
         self._vehicle_status.heartbeat = False
         self._vehicle_status.armed = False
         self._vehicle_status.in_air = False
-        self._vehicle_status.position = Position(6.366, 106.825, 0.0)
+        self._vehicle_status.position = Position(-6.366, 106.825, 0.0)
         self._vehicle_status.attitude = Attitude(0.0, 0.0, 0.0)
         self._vehicle_status.velocity = Velocity(0.0, 0.0, 0.0)
         self._vehicle_status.battery_percentage = 0.0
@@ -347,8 +347,9 @@ class DroneModel:
 
             async for state in self.drone.core.connection_state():
                 if state.is_connected:
-                    self._vehicle_status.heartbeat = True
-                    break
+                    with self._vehicle_status_lock:
+                        self._vehicle_status.heartbeat = True
+                        break
 
             tasks = [
                 self._monitor_health(),
@@ -364,8 +365,8 @@ class DroneModel:
 
             await asyncio.gather(*tasks)
 
-            self._update_ui_callback()
-
+            if self._update_ui_callback is not None:
+                self._update_ui_callback()
 
 
         except Exception as e:
@@ -558,6 +559,10 @@ class DroneModel:
         return self.run_async(self.goto_location(latitude, longitude, altitude, yaw))
 
     # --------------------------------
+    # Public stuff
+
+    def set_update_ui_callback(self, fn: Callable):
+        self._update_ui_callback = fn
 
     def add_waypoint_to_end(self, new_pos: 'Position'):
         with self._waypoints_lock:
@@ -574,7 +579,6 @@ class DroneModel:
     def get_vehicle_status(self):
         with self._vehicle_status_lock:
             return self._vehicle_status
-
 
     def __del__(self):
         if hasattr(self, 'loop') and self.loop.is_running():
