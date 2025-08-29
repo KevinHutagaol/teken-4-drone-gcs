@@ -13,7 +13,7 @@ class WaypointListItem(TypedDict):
 
 
 class DroneModel:
-    def __init__(self, connection_address: str = "udp://:14540"):
+    def __init__(self, connection_address):
         self.drone = System()
         self.connection_address = connection_address
         self.connected = False
