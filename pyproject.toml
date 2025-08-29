@@ -6,7 +6,7 @@ dependencies = [
     "pyqt5",
     "pyqt3d",
     "pyqtwebengine",
-    "pymavlink",
+    "mavsdk",
     "matplotlib",
     "numpy",
     "folium",

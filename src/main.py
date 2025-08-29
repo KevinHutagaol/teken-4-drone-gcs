@@ -1,15 +1,15 @@
 import os
 import sys
+import signal
 
 from PyQt5.QtCore import QCoreApplication, Qt
 from PyQt5.QtWidgets import QApplication
 from dotenv import load_dotenv
 
-from pymavlink import mavutil
-
+import time
+import asyncio
 from VehicleStatus import VehicleStatus
-from VehicleCommunication import VehicleCommunication
-from VehicleControl import VehicleControl
+from DroneModel import DroneModel
 
 from MainWindow.MainWindow import MainWindow, MainWindowUI
 
@@ -21,21 +21,21 @@ QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
 # noinspection PyUnresolvedReferences
 import resources_rc
 
+def sigint_handler(*args):
+    print("Shutting Down")
+    QApplication.quit()
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, sigint_handler)
     load_dotenv()
 
-    the_connection = mavutil.mavlink_connection('udpin:localhost:14540')
-
     app = QApplication(sys.argv)
-    mav_connection = VehicleCommunication(port='udpin:localhost:14550')
-
-    vehicle_control = VehicleControl()
+    drone = DroneModel("udpin://0.0.0.0:14540")
 
     main_view = MainWindowUI()
+    MainWindow(view=main_view, model=drone)
 
-    main_view_controller = MainWindow(view=main_view, model=vehicle_control)
-    mav_connection.start()
-
+    drone.start()
     main_view.show()
 
     sys.exit(app.exec_())
