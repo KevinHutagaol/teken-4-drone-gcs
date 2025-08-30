@@ -38,9 +38,4 @@ if __name__ == "__main__":
     drone.start()
     main_view.show()
 
-    timeout = 15
-
-    if drone.vehicle_status.heartbeat:
-        drone.arm_sync()
-        drone.takeoff_sync(5)
     sys.exit(app.exec_())
