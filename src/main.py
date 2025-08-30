@@ -2,7 +2,8 @@ import os
 import sys
 import signal
 
-from PyQt5.QtCore import QCoreApplication, Qt
+from PyQt5.QtCore import QCoreApplication, Qt, QSize
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 from dotenv import load_dotenv
 
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     #     print("Waiting for heartbeat...")
     #     time.sleep(0.5)
     #     app.processEvents()
-
+    #
     # if drone.get_vehicle_status().heartbeat:
     #     drone.arm_sync()
     #     drone.takeoff_sync(5)

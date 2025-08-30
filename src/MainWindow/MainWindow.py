@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QSize, Qt, QObject, pyqtSlot
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QGridLayout, QPushButton, \
     QToolButton, QSizePolicy
 
@@ -32,7 +32,7 @@ class MainWindow(QObject):
         )
 
         self._view.map_display_window.window_closed_signal.connect(
-            lambda : self._view.set_map_button_checked(False),
+            lambda: self._view.set_map_button_checked(False),
         )
 
         self._view.pid_tuning_button.clicked.connect(
@@ -44,7 +44,7 @@ class MainWindow(QObject):
         )
 
         self._view.data_logging_window.window_closed_signal.connect(
-            lambda : self._view.set_data_log_checked(False)
+            lambda: self._view.set_data_log_checked(False)
         )
 
     @pyqtSlot()
@@ -87,26 +87,45 @@ class MainWindowUI(QMainWindow):
         self.sidebar_layout = QVBoxLayout()
 
         self.map_button = QToolButton()
+        self.map_button.setMaximumHeight(150)
         self.map_button.setCheckable(True)
         self.map_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.map_button.setText("Map")
-        self.map_button.setIcon(QIcon(":/image-placeholder.png"))
+        self.map_button.setIcon(
+            QIcon(QPixmap(":/map_filled.png").scaled(QSize(90, 90),
+                                                     Qt.AspectRatioMode.KeepAspectRatio,
+                                                     Qt.TransformationMode.SmoothTransformation)
+                  )
+        )
+
         self.map_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.map_button.setIconSize(QSize(90, 90))
 
         self.pid_tuning_button = QToolButton()
+        self.pid_tuning_button.setMaximumHeight(150)
         self.pid_tuning_button.setCheckable(True)
         self.pid_tuning_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.pid_tuning_button.setText("PID tuning")
-        self.pid_tuning_button.setIcon(QIcon(":/image-placeholder.png"))
+        self.pid_tuning_button.setIcon(
+            QIcon(QPixmap(":/comparator.png").scaled(QSize(90, 90),
+                                                     Qt.AspectRatioMode.KeepAspectRatio,
+                                                     Qt.TransformationMode.SmoothTransformation)
+                  )
+        )
         self.pid_tuning_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.pid_tuning_button.setIconSize(QSize(90, 90))
 
         self.data_logging_button = QToolButton()
+        self.data_logging_button.setMaximumHeight(150)
         self.data_logging_button.setCheckable(True)
         self.data_logging_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.data_logging_button.setText("Data logging")
-        self.data_logging_button.setIcon(QIcon(":/image-placeholder.png"))
+        self.data_logging_button.setIcon(
+            QIcon(QPixmap(":/writable_book.png").scaled(QSize(90, 90),
+                                                        Qt.AspectRatioMode.KeepAspectRatio,
+                                                        Qt.TransformationMode.SmoothTransformation)
+                  )
+        )
         self.data_logging_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.data_logging_button.setIconSize(QSize(90, 90))
 
@@ -142,6 +161,8 @@ class MainWindowUI(QMainWindow):
 
         # ---
         self.body_widget.setLayout(self.body_layout)
+        self.setWindowTitle("Teken 4 Drone GCS")
+        self.setWindowIcon(QIcon(":/elytra.ico"))
 
         self.setCentralWidget(self.body_widget)
         self.setMinimumSize(QSize(720, 480))  # 640 x 480 is microsoft recommendation
@@ -152,7 +173,6 @@ class MainWindowUI(QMainWindow):
         self.pid_tuning_window = PidTuningWindowUI()
         self.map_display_window = MapDisplayWindowUI()
 
-
     @pyqtSlot(bool)
     def set_map_button_checked(self, checked):
         self.map_button.setChecked(checked)
@@ -160,8 +180,6 @@ class MainWindowUI(QMainWindow):
     @pyqtSlot(bool)
     def set_data_log_checked(self, checked):
         self.data_logging_button.setChecked(checked)
-
-
 
     def closeEvent(self, event):
         event.ignore()

@@ -108,7 +108,7 @@ class DataLoggingWindowUI(QWidget):
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
         self.setWindowTitle(_translate("Widget", "|---| Data Logger |---|"))
-        self.setWindowIcon(QtGui.QIcon('qrc:/clock_00.png'))
+        self.setWindowIcon(QtGui.QIcon(':/clock_00.png'))
         self.label_2.setText(_translate("Widget", "Logging Interval (Milliseconds)"))
         self.pushButton.setText(_translate("Widget", "Set Interval"))
         self.label_3.setText(_translate("Widget", "Data Type | Plot of Data -------->"))
