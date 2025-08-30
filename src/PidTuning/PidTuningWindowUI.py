@@ -10,7 +10,7 @@ class PidTuningWindowUI(QtWidgets.QWidget):
         self.setObjectName("Self")
         self.resize(1036, 521) 
 
-        self.setWindowTitle("PID Tuning Modular")
+        self.setWindowTitle("PID Tuning")
         layout = QtWidgets.QVBoxLayout(self)
 
         self.tabWidget = QtWidgets.QTabWidget()
@@ -19,10 +19,3 @@ class PidTuningWindowUI(QtWidgets.QWidget):
         self.tabWidget.addTab(AttitudeTab(), "Attitude Controller")
         self.tabWidget.addTab(VelocityTab(), "Velocity Controller")
         self.tabWidget.addTab(PositionTab(), "Position Controller")
-
-if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
