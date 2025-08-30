@@ -1,5 +1,6 @@
 import os
 import sys
+import signal
 
 from PyQt5.QtCore import QCoreApplication, Qt
 from PyQt5.QtWidgets import QApplication
@@ -20,30 +21,21 @@ QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
 # noinspection PyUnresolvedReferences
 import resources_rc
 
+def sigint_handler(*args):
+    print("Shutting Down")
+    QApplication.quit()
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, sigint_handler)
     load_dotenv()
 
     app = QApplication(sys.argv)
     drone = DroneModel("udpin://0.0.0.0:14540")
-    
+
     main_view = MainWindowUI()
     MainWindow(view=main_view, model=drone)
-    
+
     drone.start()
     main_view.show()
-    
-    timeout = 15 
 
-    while not drone.vehicle_status.heartbeat:
-        print("Waiting for heartbeat...")
-        time.sleep(0.5)
-        app.processEvents()
-    
-    if drone.vehicle_status.heartbeat:
-        drone.arm_sync()
-        drone.takeoff_sync(5)
     sys.exit(app.exec_())
-
-
-
-    

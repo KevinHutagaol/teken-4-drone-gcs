@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QSize, Qt, QObject, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QGridLayout, QPushButton, \
-    QToolButton, QSizePolicy, QApplication
+    QToolButton, QSizePolicy
 
 from DataLogging.DataLoggingWindowUI import DataLoggingWindowUI
 from MapDisplay.MapDisplayWindowUI import MapDisplayWindow, MapDisplayWindowUI
@@ -18,6 +18,7 @@ class MainWindow:
     def __init__(self, view: "MainWindowUI", model: "DroneModel"):
         self._view = view
         self.map_display_window_controller = MapDisplayWindow(view=self._view.map_display_window, model=model)
+        self._view.pid_tuning_window.set_drone_model(model)
 
         self._connect_window_buttons()
 
