@@ -1,10 +1,15 @@
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import csv, os, numpy as np
 
 class RateTab(QtWidgets.QWidget):
+    # Signals
+    pid_submitted = pyqtSignal(str, float, float, float)  # axis, p, i, d
+    load_from_drone = pyqtSignal(str)  # axis
+    
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Rate Control")
@@ -86,22 +91,29 @@ class RateTab(QtWidgets.QWidget):
         right_layout.addWidget(pid_widget)
         
         # Control Buttons
-        button_layout = QtWidgets.QHBoxLayout()
+        button_layout1 = QtWidgets.QHBoxLayout()
+        self.btn_load = QtWidgets.QPushButton("Load from Drone")
+        self.btn_submit = QtWidgets.QPushButton("Submit to Drone")
+        
+        button_layout1.addWidget(self.btn_load)
+        button_layout1.addWidget(self.btn_submit)
+        right_layout.addLayout(button_layout1)
+        
+        button_layout2 = QtWidgets.QHBoxLayout()
         self.btn_pause = QtWidgets.QPushButton("Pause")
         self.btn_continue = QtWidgets.QPushButton("Continue")
         self.btn_auto = QtWidgets.QPushButton("Auto")
-        self.btn_submit = QtWidgets.QPushButton("Submit")
         
-        button_layout.addWidget(self.btn_pause)
-        button_layout.addWidget(self.btn_continue)
-        button_layout.addWidget(self.btn_auto)
-        button_layout.addWidget(self.btn_submit)
+        button_layout2.addWidget(self.btn_pause)
+        button_layout2.addWidget(self.btn_continue)
+        button_layout2.addWidget(self.btn_auto)
         
         self.btn_pause.clicked.connect(self.pause_control)
         self.btn_continue.clicked.connect(self.continue_control)
         self.btn_submit.clicked.connect(self.submit_pid_values)
+        self.btn_load.clicked.connect(self.load_pid_from_drone)
         
-        right_layout.addLayout(button_layout)
+        right_layout.addLayout(button_layout2)
         main_layout.addWidget(right_widget, stretch=1)
 
     def on_tuning_changed(self, mode):
@@ -157,7 +169,29 @@ class RateTab(QtWidgets.QWidget):
         print(f"Rate control continued for {self.tuning_mode}")
         
     def submit_pid_values(self):
-        print(f"Rate PID values submitted for {self.tuning_mode}:")
-        print(f"P: {self.pid_values[self.tuning_mode]['P']}")
-        print(f"I: {self.pid_values[self.tuning_mode]['I']}")
-        print(f"D: {self.pid_values[self.tuning_mode]['D']}")
+        """Submit PID values to drone"""
+        p = self.pid_values[self.tuning_mode]['P']
+        i = self.pid_values[self.tuning_mode]['I']
+        d = self.pid_values[self.tuning_mode]['D']
+        
+        print(f"Submitting Rate PID values for {self.tuning_mode}: P={p}, I={i}, D={d}")
+        self.pid_submitted.emit(self.tuning_mode, p, i, d)
+        
+    def load_pid_from_drone(self):
+        """Request to load PID values from drone"""
+        print(f"Loading Rate PID values from drone for {self.tuning_mode}")
+        self.load_from_drone.emit(self.tuning_mode)
+        
+    def update_pid_values_from_drone(self, axis, params):
+        """Update PID values received from drone"""
+        if axis in self.pid_values and params:
+            self.pid_values[axis]["P"] = params.get("p", 0.0)
+            self.pid_values[axis]["I"] = params.get("i", 0.0)
+            self.pid_values[axis]["D"] = params.get("d", 0.0)
+            
+            # Update UI if this is the current tuning mode
+            if axis == self.tuning_mode:
+                self.update_pid_inputs()
+                self.update_pid_chart()
+                
+            print(f"Updated {axis} PID values from drone: P={params.get('p', 0.0)}, I={params.get('i', 0.0)}, D={params.get('d', 0.0)}")

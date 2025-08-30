@@ -18,8 +18,11 @@ class MainWindow(QObject):
     def __init__(self, view: "MainWindowUI", model: "DroneModel"):
         super().__init__()
         self._view = view
-
         self._model = model
+        
+        # Initialize PID tuning window with drone model
+        self._view.pid_tuning_window = PidTuningWindowUI(self._model)
+        
         self.map_display_window_controller = MapDisplayWindow(view=self._view.map_display_window, model=self._model)
 
         self._model.ui_update_signal.connect(self.update_ui)
@@ -149,7 +152,8 @@ class MainWindowUI(QMainWindow):
         # OTHER WINDOWS
 
         self.data_logging_window = DataLoggingWindowUI()
-        self.pid_tuning_window = PidTuningWindowUI()
+        # PID tuning window will be created by MainWindow controller with drone model
+        self.pid_tuning_window = None  
         self.map_display_window = MapDisplayWindowUI()
 
 
