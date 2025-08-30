@@ -41,7 +41,7 @@ class DroneModel:
         self.vehicle_status.heartbeat = False
         self.vehicle_status.armed = False
         self.vehicle_status.in_air = False
-        self.vehicle_status.position = Position(6.366, 106.825, 0.0)
+        self.vehicle_status.position = Position(0.0, 0.0, 0.0)
         self.vehicle_status.attitude = Attitude(0.0, 0.0, 0.0)
         self.vehicle_status.velocity = Velocity(0.0, 0.0, 0.0)
         self.vehicle_status.battery_percentage = 0.0
@@ -54,53 +54,247 @@ class DroneModel:
         
     def run_async(self, coro):
         if self.event_loop is None or not self.event_loop.is_running():
-            return asyncio.run(coro)
-            
+            return None
+        
         future = asyncio.run_coroutine_threadsafe(coro, self.event_loop)
-        return future.result(10)
+        result = future.result(10)
+        return result
         
     async def connect(self):
         await self.drone.connect(system_address=self.connection_address)
         async for state in self.drone.core.connection_state():
             if state.is_connected:
-                self.connected = True
                 break
+            
     async def set_attitude_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
         try:
-            param_name_p = f"MC_{axis.upper()}_P"
-            param_name_i = f"MC_{axis.upper()}_I" 
-            param_name_d = f"MC_{axis.upper()}_D"
-            
-            await self.drone.param.set_param_float(param_name_p, p_gain)
-            await self.drone.param.set_param_float(param_name_i, i_gain)
-            await self.drone.param.set_param_float(param_name_d, d_gain)
+            if axis.lower() == "roll":
+                await self.drone.param.set_param_float("MC_ROLL_P", p_gain)
+            elif axis.lower() == "pitch":
+                await self.drone.param.set_param_float("MC_PITCH_P", p_gain)
+            elif axis.lower() == "yaw":
+                await self.drone.param.set_param_float("MC_YAW_P", p_gain)
             return True
         except Exception as e:
             return False
     
     def set_attitude_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
+        if self.event_loop is None or not self.event_loop.is_running():
+            return False
         return self.run_async(self.set_attitude_pid_params(p_gain, i_gain, d_gain, axis))
     
     async def get_attitude_pid_params(self, axis: str = "roll"):
         try:
-            param_name_p = f"MC_{axis.upper()}_P"
-            param_name_i = f"MC_{axis.upper()}_I"
-            param_name_d = f"MC_{axis.upper()}_D"
-            
-            p_result = await self.drone.param.get_param_float(param_name_p)
-            i_result = await self.drone.param.get_param_float(param_name_i)
-            d_result = await self.drone.param.get_param_float(param_name_d)
-            
-            return {
-                'p': p_result.value,
-                'i': i_result.value, 
-                'd': d_result.value
-            }
+            if axis.lower() == "roll":
+                p = await self.drone.param.get_param_float("MC_ROLL_P")
+                # Attitude controller only has P gain, no I or D
+                return {"p": p, "i": 0.0, "d": 0.0}
+            elif axis.lower() == "pitch":
+                p = await self.drone.param.get_param_float("MC_PITCH_P")
+                return {"p": p, "i": 0.0, "d": 0.0}
+            elif axis.lower() == "yaw":
+                p = await self.drone.param.get_param_float("MC_YAW_P")
+                return {"p": p, "i": 0.0, "d": 0.0}
+            return {"p": 0.0, "i": 0.0, "d": 0.0}
         except Exception as e:
-            return {'p': 0.0, 'i': 0.0, 'd': 0.0}
+            return {"p": 0.0, "i": 0.0, "d": 0.0}
     
     def get_attitude_pid_params_sync(self, axis: str = "roll"):
+        if self.event_loop is None or not self.event_loop.is_running():
+            return {"p": 0.0, "i": 0.0, "d": 0.0}
         return self.run_async(self.get_attitude_pid_params(axis))
+    
+    async def set_rate_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
+        try:
+            if axis.lower() == "roll":
+                await self.drone.param.set_param_float("MC_ROLLRATE_P", p_gain)
+                await self.drone.param.set_param_float("MC_ROLLRATE_I", i_gain)
+                await self.drone.param.set_param_float("MC_ROLLRATE_D", d_gain)
+            elif axis.lower() == "pitch":
+                await self.drone.param.set_param_float("MC_PITCHRATE_P", p_gain)
+                await self.drone.param.set_param_float("MC_PITCHRATE_I", i_gain)
+                await self.drone.param.set_param_float("MC_PITCHRATE_D", d_gain)
+            elif axis.lower() == "yaw":
+                await self.drone.param.set_param_float("MC_YAWRATE_P", p_gain)
+                await self.drone.param.set_param_float("MC_YAWRATE_I", i_gain)
+                await self.drone.param.set_param_float("MC_YAWRATE_D", d_gain)
+            return True
+        except Exception as e:
+            return False
+    
+    def set_rate_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
+        if self.event_loop is None or not self.event_loop.is_running():
+            return False
+        return self.run_async(self.set_rate_pid_params(p_gain, i_gain, d_gain, axis))
+    
+    async def get_rate_pid_params(self, axis: str = "roll"):
+        try:
+            if axis.lower() == "roll":
+                p = await self.drone.param.get_param_float("MC_ROLLRATE_P")
+                i = await self.drone.param.get_param_float("MC_ROLLRATE_I")
+                d = await self.drone.param.get_param_float("MC_ROLLRATE_D")
+                return {"p": p, "i": i, "d": d}
+            elif axis.lower() == "pitch":
+                p = await self.drone.param.get_param_float("MC_PITCHRATE_P")
+                i = await self.drone.param.get_param_float("MC_PITCHRATE_I")
+                d = await self.drone.param.get_param_float("MC_PITCHRATE_D")
+                return {"p": p, "i": i, "d": d}
+            elif axis.lower() == "yaw":
+                p = await self.drone.param.get_param_float("MC_YAWRATE_P")
+                i = await self.drone.param.get_param_float("MC_YAWRATE_I")
+                d = await self.drone.param.get_param_float("MC_YAWRATE_D")
+                return {"p": p, "i": i, "d": d}
+            return {"p": 0.0, "i": 0.0, "d": 0.0}
+        except Exception as e:
+            return {"p": 0.0, "i": 0.0, "d": 0.0}
+    
+    def get_rate_pid_params_sync(self, axis: str = "roll"):
+        return self.run_async(self.get_rate_pid_params(axis))
+    
+    async def set_position_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
+        try:
+            if axis.lower() in ["x", "y"]:
+                await self.drone.param.set_param_float("MPC_XY_P", p_gain)
+                await self.drone.param.set_param_float("MPC_XY_VEL_P_ACC", i_gain)
+                await self.drone.param.set_param_float("MPC_XY_VEL_D_ACC", d_gain)
+            elif axis.lower() == "z":
+                await self.drone.param.set_param_float("MPC_Z_P", p_gain)
+                await self.drone.param.set_param_float("MPC_Z_VEL_P_ACC", i_gain)
+                await self.drone.param.set_param_float("MPC_Z_VEL_D_ACC", d_gain)
+            return True
+        except Exception as e:
+            return False
+    
+    def set_position_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
+        if self.event_loop is None or not self.event_loop.is_running():
+            return False
+        return self.run_async(self.set_position_pid_params(p_gain, i_gain, d_gain, axis))
+    
+    async def get_position_pid_params(self, axis: str = "x"):
+        try:
+            if axis.lower() in ["x", "y"]:
+                p = await self.drone.param.get_param_float("MPC_XY_P")
+                # Position controller only has P gain, no I or D
+                return {"p": p, "i": 0.0, "d": 0.0}
+            elif axis.lower() == "z":
+                p = await self.drone.param.get_param_float("MPC_Z_P")
+                return {"p": p, "i": 0.0, "d": 0.0}
+            return {"p": 0.0, "i": 0.0, "d": 0.0}
+        except Exception as e:
+            return {"p": 0.0, "i": 0.0, "d": 0.0}
+    
+    def get_position_pid_params_sync(self, axis: str = "x"):
+        return self.run_async(self.get_position_pid_params(axis))
+    
+    async def set_velocity_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
+        try:
+            if axis.lower() in ["x", "y"]:
+                await self.drone.param.set_param_float("MPC_XY_VEL_P_ACC", p_gain)
+                await self.drone.param.set_param_float("MPC_XY_VEL_I_ACC", i_gain)
+                await self.drone.param.set_param_float("MPC_XY_VEL_D_ACC", d_gain)
+            elif axis.lower() == "z":
+                await self.drone.param.set_param_float("MPC_Z_VEL_P_ACC", p_gain)
+                await self.drone.param.set_param_float("MPC_Z_VEL_I_ACC", i_gain)
+                await self.drone.param.set_param_float("MPC_Z_VEL_D_ACC", d_gain)
+            return True
+        except Exception as e:
+            return False
+    
+    def set_velocity_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
+        if self.event_loop is None or not self.event_loop.is_running():
+            return False
+        return self.run_async(self.set_velocity_pid_params(p_gain, i_gain, d_gain, axis))
+    
+    async def get_velocity_pid_params(self, axis: str = "x"):
+        try:
+            if axis.lower() in ["x", "y"]:
+                p = await self.drone.param.get_param_float("MPC_XY_VEL_P_ACC")
+                i = await self.drone.param.get_param_float("MPC_XY_VEL_I_ACC")
+                d = await self.drone.param.get_param_float("MPC_XY_VEL_D_ACC")
+                return {"p": p, "i": i, "d": d}
+            elif axis.lower() == "z":
+                p = await self.drone.param.get_param_float("MPC_Z_VEL_P_ACC")
+                i = await self.drone.param.get_param_float("MPC_Z_VEL_I_ACC")
+                d = await self.drone.param.get_param_float("MPC_Z_VEL_D_ACC")
+                return {"p": p, "i": i, "d": d}
+            return {"p": 0.0, "i": 0.0, "d": 0.0}
+        except Exception as e:
+            return {"p": 0.0, "i": 0.0, "d": 0.0}
+    
+    def get_velocity_pid_params_sync(self, axis: str = "x"):
+        return self.run_async(self.get_velocity_pid_params(axis))
+    
+    def get_all_pid_parameters(self):
+        try:
+            all_params = {
+                "attitude": {
+                    "roll": self.get_attitude_pid_params_sync("roll"),
+                    "pitch": self.get_attitude_pid_params_sync("pitch"),
+                    "yaw": self.get_attitude_pid_params_sync("yaw")
+                },
+                "rate": {
+                    "roll": self.get_rate_pid_params_sync("roll"),
+                    "pitch": self.get_rate_pid_params_sync("pitch"),
+                    "yaw": self.get_rate_pid_params_sync("yaw")
+                },
+                "position": {
+                    "x": self.get_position_pid_params_sync("x"),
+                    "y": self.get_position_pid_params_sync("x"),
+                    "z": self.get_position_pid_params_sync("z")
+                },
+                "velocity": {
+                    "x": self.get_velocity_pid_params_sync("x"),
+                    "y": self.get_velocity_pid_params_sync("x"),
+                    "z": self.get_velocity_pid_params_sync("z")
+                }
+            }
+            return all_params
+        except Exception as e:
+            return None
+    
+    def set_all_attitude_pid_params(self, roll_pid: dict, pitch_pid: dict, yaw_pid: dict):
+        try:
+            if "p" in roll_pid:
+                self.set_attitude_pid_params_sync(roll_pid["p"], 0, 0, "roll")
+            if "p" in pitch_pid:
+                self.set_attitude_pid_params_sync(pitch_pid["p"], 0, 0, "pitch")
+            if "p" in yaw_pid:
+                self.set_attitude_pid_params_sync(yaw_pid["p"], 0, 0, "yaw")
+            return True
+        except Exception as e:
+            return False
+    
+    def set_all_rate_pid_params(self, roll_pid: dict, pitch_pid: dict, yaw_pid: dict):
+        try:
+            if all(k in roll_pid for k in ["p", "i", "d"]):
+                self.set_rate_pid_params_sync(roll_pid["p"], roll_pid["i"], roll_pid["d"], "roll")
+            if all(k in pitch_pid for k in ["p", "i", "d"]):
+                self.set_rate_pid_params_sync(pitch_pid["p"], pitch_pid["i"], pitch_pid["d"], "pitch")
+            if all(k in yaw_pid for k in ["p", "i", "d"]):
+                self.set_rate_pid_params_sync(yaw_pid["p"], yaw_pid["i"], yaw_pid["d"], "yaw")
+            return True
+        except Exception as e:
+            return False
+    
+    def set_all_position_pid_params(self, xy_pid: dict, z_pid: dict):
+        try:
+            if all(k in xy_pid for k in ["p", "i", "d"]):
+                self.set_position_pid_params_sync(xy_pid["p"], xy_pid["i"], xy_pid["d"], "x")
+            if all(k in z_pid for k in ["p", "i", "d"]):
+                self.set_position_pid_params_sync(z_pid["p"], z_pid["i"], z_pid["d"], "z")
+            return True
+        except Exception as e:
+            return False
+    
+    def set_all_velocity_pid_params(self, xy_pid: dict, z_pid: dict):
+        try:
+            if all(k in xy_pid for k in ["p", "i", "d"]):
+                self.set_velocity_pid_params_sync(xy_pid["p"], xy_pid["i"], xy_pid["d"], "x")
+            if all(k in z_pid for k in ["p", "i", "d"]):
+                self.set_velocity_pid_params_sync(z_pid["p"], z_pid["i"], z_pid["d"], "z")
+            return True
+        except Exception as e:
+            return False
     
     async def set_rate_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
         try:
@@ -117,27 +311,6 @@ class DroneModel:
     
     def set_rate_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
         return self.run_async(self.set_rate_pid_params(p_gain, i_gain, d_gain, axis))
-    
-    async def get_rate_pid_params(self, axis: str = "roll"):
-        try:
-            param_name_p = f"MC_{axis.upper()}RATE_P"
-            param_name_i = f"MC_{axis.upper()}RATE_I"
-            param_name_d = f"MC_{axis.upper()}RATE_D"
-            
-            p_result = await self.drone.param.get_param_float(param_name_p)
-            i_result = await self.drone.param.get_param_float(param_name_i)
-            d_result = await self.drone.param.get_param_float(param_name_d)
-            
-            return {
-                'p': p_result.value,
-                'i': i_result.value,
-                'd': d_result.value
-            }
-        except Exception as e:
-            return {'p': 0.0, 'i': 0.0, 'd': 0.0}
-    
-    def get_rate_pid_params_sync(self, axis: str = "roll"):
-        return self.run_async(self.get_rate_pid_params(axis))
     
     async def set_position_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
         try:
@@ -163,31 +336,6 @@ class DroneModel:
     def set_position_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
         return self.run_async(self.set_position_pid_params(p_gain, i_gain, d_gain, axis))
     
-    async def get_position_pid_params(self, axis: str = "x"):
-        try:
-            if axis.lower() == "x" or axis.lower() == "y":
-                param_name_p = "MPC_XY_P"
-                param_name_d = "MPC_XY_VEL_P_ACC"
-            elif axis.lower() == "z":
-                param_name_p = "MPC_Z_P"
-                param_name_d = "MPC_Z_VEL_P_ACC"
-            else:
-                return {'p': 0.0, 'i': 0.0, 'd': 0.0}
-            
-            p_result = await self.drone.param.get_param_float(param_name_p)
-            d_result = await self.drone.param.get_param_float(param_name_d)
-            
-            return {
-                'p': p_result.value,
-                'i': 0.0,
-                'd': d_result.value
-            }
-        except Exception as e:
-            return {'p': 0.0, 'i': 0.0, 'd': 0.0}
-    
-    def get_position_pid_params_sync(self, axis: str = "x"):
-        return self.run_async(self.get_position_pid_params(axis))
-    
     async def set_velocity_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
         try:
             if axis.lower() == "x" or axis.lower() == "y":
@@ -207,37 +355,6 @@ class DroneModel:
             return True
         except Exception as e:
             return False
-    
-    def set_velocity_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
-        return self.run_async(self.set_velocity_pid_params(p_gain, i_gain, d_gain, axis))
-    
-    async def get_velocity_pid_params(self, axis: str = "x"):
-        try:
-            if axis.lower() == "x" or axis.lower() == "y":
-                param_name_p = "MPC_XY_VEL_P_ACC"
-                param_name_i = "MPC_XY_VEL_I_ACC"
-                param_name_d = "MPC_XY_VEL_D_ACC"
-            elif axis.lower() == "z":
-                param_name_p = "MPC_Z_VEL_P_ACC"
-                param_name_i = "MPC_Z_VEL_I_ACC"
-                param_name_d = "MPC_Z_VEL_D_ACC"
-            else:
-                return {'p': 0.0, 'i': 0.0, 'd': 0.0}
-            
-            p_result = await self.drone.param.get_param_float(param_name_p)
-            i_result = await self.drone.param.get_param_float(param_name_i)
-            d_result = await self.drone.param.get_param_float(param_name_d)
-            
-            return {
-                'p': p_result.value,
-                'i': i_result.value,
-                'd': d_result.value
-            }
-        except Exception as e:
-            return {'p': 0.0, 'i': 0.0, 'd': 0.0}
-    
-    def get_velocity_pid_params_sync(self, axis: str = "x"):
-        return self.run_async(self.get_velocity_pid_params(axis))
     
     def get_all_pid_parameters(self):
         try:
