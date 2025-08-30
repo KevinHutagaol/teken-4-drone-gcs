@@ -18,6 +18,7 @@ class MainWindow(QObject):
     def __init__(self, view: "MainWindowUI", model: "DroneModel"):
         super().__init__()
         self._view = view
+
         self._model = model
         self.map_display_window_controller = MapDisplayWindow(view=self._view.map_display_window, model=self._model)
 
