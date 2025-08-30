@@ -37,8 +37,9 @@ class MapDisplayWindow(QObject):
         self.update_map_on_drone_move()
 
     def update_map_on_drone_move(self):
-        self._view.render_map_waypoints_ui(self._model.get_current_position(), self._model.get_waypoints(), -1)
-        self._view.render_map_polylines_ui(self._model.get_current_position(), self._model.get_waypoints())
+        self._view.render_map_waypoints_ui(self._model.get_vehicle_status().position, self._model.get_waypoints(), -1)
+        self._view.render_map_polylines_ui(self._model.get_vehicle_status().position, self._model.get_waypoints())
+        self._view.render_list_ui(self._model.get_waypoints())
 
     @pyqtSlot(bool)
     def _on_add_waypoint_button_clicked(self, checked):
@@ -50,7 +51,7 @@ class MapDisplayWindow(QObject):
         if curr is not None:
             selected_item = curr.data(0, 0)
 
-            self._view.render_map_waypoints_ui(self._model.get_current_position(), self._model.get_waypoints(),
+            self._view.render_map_waypoints_ui(self._model.get_vehicle_status().position, self._model.get_waypoints(),
                                                selected_item)
 
     @pyqtSlot(QVariant)
@@ -68,8 +69,8 @@ class MapDisplayWindow(QObject):
 
         self._model.add_waypoint_to_end(Position(args['lat'], args['lng'], alt_val))
 
-        self._view.render_map_waypoints_ui(self._model.get_current_position(), self._model.get_waypoints(), -1)
-        self._view.render_map_polylines_ui(self._model.get_current_position(), self._model.get_waypoints())
+        self._view.render_map_waypoints_ui(self._model.get_vehicle_status().position, self._model.get_waypoints(), -1)
+        self._view.render_map_polylines_ui(self._model.get_vehicle_status().position, self._model.get_waypoints())
         self._view.render_list_ui(self._model.get_waypoints())
 
         # print(self._view.get_current_selected_list_item().data())
@@ -81,8 +82,8 @@ class MapDisplayWindow(QObject):
     def _on_del_button_group_clicked(self, button_id):
         print(button_id)
         self._model.remove_waypoint(button_id)
-        self._view.render_map_waypoints_ui(self._model.get_current_position(), self._model.get_waypoints(), -1)
-        self._view.render_map_polylines_ui(self._model.get_current_position(), self._model.get_waypoints())
+        self._view.render_map_waypoints_ui(self._model.get_vehicle_status().position, self._model.get_waypoints(), -1)
+        self._view.render_map_polylines_ui(self._model.get_vehicle_status().position, self._model.get_waypoints())
         self._view.render_list_ui(self._model.get_waypoints())
 
 
@@ -264,6 +265,7 @@ class MapDisplayWindowUI(QWidget):
         return self.list.currentIndex()
 
     def render_list_ui(self, waypoints: list['Position']):
+        # cur_index = self.list.currentIndex()
         for button in self.delete_list_item_button_group.buttons():
             self.delete_list_item_button_group.removeButton(button)
 
@@ -288,6 +290,9 @@ class MapDisplayWindowUI(QWidget):
             self.list.setItemWidget(item, 4, button)
 
             # print(self.delete_list_item_button_group.buttons())
+
+        # if cur_index is not None:
+            # self.list.setCurrentIndex(cur_index)
 
     def render_map_waypoints_ui(self, drone_position: 'Position', waypoints: list['Position'],
                                 selected_item_num: int):
