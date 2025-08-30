@@ -1,42 +1,46 @@
 import threading
 import asyncio
 import math
+from collections.abc import Callable
+
+import numpy as np
+from PyQt5.QtCore import QObject, pyqtSignal
+
 from VehicleStatus import VehicleStatus, FlightMode, Position, Attitude, Velocity
+
+import mavsdk
 from mavsdk import System
 from mavsdk.action import ActionError
 
+ALLOWABLE_HORIZONTAL_DISTANCE_TO_WAYPOINT = 1.0
+ALLOWABLE_VERTICAL_DISTANCE_TO_WAYPOINT = 1.0
 
 
-class DroneModel:
-    _waypoints: list['Position'] = []
-    _current_position: 'Position' = Position(-6.200000, 106.816666, 10)
-
-    def add_waypoint_to_end(self, new_pos: 'Position'):
-        self._waypoints.append(new_pos)
-
-    def remove_waypoint(self, index: int):
-        self._waypoints.pop(index)
-
-    def get_waypoints(self):
-        return self._waypoints
-
-    def get_current_position(self):
-        return self._current_position
+class DroneModel(QObject):
+    ui_update_signal = pyqtSignal()
 
     def __init__(self, connection_address: str = "udp://:14540"):
+        super().__init__()
         self.drone = System()
         self.connection_address = connection_address
         self.connected = False
         self.coordinates = []
 
+        self._waypoints: list['Position'] = []
+        self._vehicle_status = VehicleStatus()
+
+        self._vehicle_status_lock = threading.Lock()
+        self._waypoints_lock = threading.Lock()
+
         self.running = False
         self.main_task = None
+        self.ui_updater_task = None
         self.event_loop = None
+        self.loop_ready_event = threading.Event()
         self.thread = None
-        
-        self.vehicle_status = VehicleStatus()
+
         self._initialize_status()
-    
+
     def _initialize_status(self):
         self.vehicle_status.heartbeat = False
         self.vehicle_status.armed = False
@@ -60,6 +64,7 @@ class DroneModel:
         result = future.result(10)
         return result
         
+
     async def connect(self):
         await self.drone.connect(system_address=self.connection_address)
         async for state in self.drone.core.connection_state():
@@ -74,15 +79,17 @@ class DroneModel:
                 await self.drone.param.set_param_float("MC_PITCH_P", p_gain)
             elif axis.lower() == "yaw":
                 await self.drone.param.set_param_float("MC_YAW_P", p_gain)
+
             return True
         except Exception as e:
+            print(e)
             return False
-    
+
     def set_attitude_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
         if self.event_loop is None or not self.event_loop.is_running():
             return False
         return self.run_async(self.set_attitude_pid_params(p_gain, i_gain, d_gain, axis))
-    
+
     async def get_attitude_pid_params(self, axis: str = "roll"):
         try:
             if axis.lower() == "roll":
@@ -98,14 +105,16 @@ class DroneModel:
             return {"p": 0.0, "i": 0.0, "d": 0.0}
         except Exception as e:
             return {"p": 0.0, "i": 0.0, "d": 0.0}
-    
+
+          
     def get_attitude_pid_params_sync(self, axis: str = "roll"):
         if self.event_loop is None or not self.event_loop.is_running():
             return {"p": 0.0, "i": 0.0, "d": 0.0}
         return self.run_async(self.get_attitude_pid_params(axis))
-    
+
     async def set_rate_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
         try:
+
             if axis.lower() == "roll":
                 await self.drone.param.set_param_float("MC_ROLLRATE_P", p_gain)
                 await self.drone.param.set_param_float("MC_ROLLRATE_I", i_gain)
@@ -118,15 +127,16 @@ class DroneModel:
                 await self.drone.param.set_param_float("MC_YAWRATE_P", p_gain)
                 await self.drone.param.set_param_float("MC_YAWRATE_I", i_gain)
                 await self.drone.param.set_param_float("MC_YAWRATE_D", d_gain)
+
             return True
         except Exception as e:
             return False
-    
+
     def set_rate_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
         if self.event_loop is None or not self.event_loop.is_running():
             return False
         return self.run_async(self.set_rate_pid_params(p_gain, i_gain, d_gain, axis))
-    
+
     async def get_rate_pid_params(self, axis: str = "roll"):
         try:
             if axis.lower() == "roll":
@@ -301,6 +311,7 @@ class DroneModel:
             param_name_p = f"MC_{axis.upper()}RATE_P"
             param_name_i = f"MC_{axis.upper()}RATE_I"
             param_name_d = f"MC_{axis.upper()}RATE_D"
+
             
             await self.drone.param.set_param_float(param_name_p, p_gain)
             await self.drone.param.set_param_float(param_name_i, i_gain)
@@ -312,6 +323,7 @@ class DroneModel:
     def set_rate_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
         return self.run_async(self.set_rate_pid_params(p_gain, i_gain, d_gain, axis))
     
+
     async def set_position_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
         try:
             if axis.lower() == "x":
@@ -325,16 +337,18 @@ class DroneModel:
                 param_name_d = "MPC_Z_VEL_P_ACC"
             else:
                 return False
-            
+
             await self.drone.param.set_param_float(param_name_p, p_gain)
             if d_gain is not None:
                 await self.drone.param.set_param_float(param_name_d, d_gain)
             return True
         except Exception as e:
+            print(e)
             return False
-    
+
     def set_position_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
         return self.run_async(self.set_position_pid_params(p_gain, i_gain, d_gain, axis))
+
     
     async def set_velocity_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
         try:
@@ -348,14 +362,17 @@ class DroneModel:
                 param_name_d = "MPC_Z_VEL_D_ACC"
             else:
                 return False
-            
+
             await self.drone.param.set_param_float(param_name_p, p_gain)
             await self.drone.param.set_param_float(param_name_i, i_gain)
             await self.drone.param.set_param_float(param_name_d, d_gain)
             return True
         except Exception as e:
+            print(e)
             return False
+
     
+
     def get_all_pid_parameters(self):
         try:
             params = {
@@ -382,8 +399,9 @@ class DroneModel:
             }
             return params
         except Exception as e:
+            print(e)
             return None
-    
+
     def set_all_attitude_pid_params(self, roll_pid: dict, pitch_pid: dict, yaw_pid: dict):
         try:
             results = []
@@ -398,8 +416,9 @@ class DroneModel:
             ))
             return all(results)
         except Exception as e:
+            print(e)
             return False
-    
+
     def set_all_rate_pid_params(self, roll_pid: dict, pitch_pid: dict, yaw_pid: dict):
         try:
             results = []
@@ -414,8 +433,9 @@ class DroneModel:
             ))
             return all(results)
         except Exception as e:
+            print(e)
             return False
-    
+
     def set_all_position_pid_params(self, xy_pid: dict, z_pid: dict):
         try:
             results = []
@@ -427,8 +447,9 @@ class DroneModel:
             ))
             return all(results)
         except Exception as e:
+            print(e)
             return False
-    
+
     def set_all_velocity_pid_params(self, xy_pid: dict, z_pid: dict):
         try:
             results = []
@@ -443,8 +464,9 @@ class DroneModel:
             ))
             return all(results)
         except Exception as e:
+            print(e)
             return False
-    
+
     def start(self):
         self.running = True
         self.thread = threading.Thread(target=self._run_async_loop)
@@ -461,17 +483,21 @@ class DroneModel:
     def _run_async_loop(self):
         self.event_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.event_loop)
+
+        self.loop_ready_event.set()
         self.main_task = self.event_loop.create_task(self._main_async())
-        self.event_loop.run_until_complete(self.main_task)
+        self.event_loop.run_forever()
+        self.event_loop.close()
 
     async def _main_async(self):
         try:
             await self.drone.connect(system_address=self.connection_address)
-            
+
             async for state in self.drone.core.connection_state():
                 if state.is_connected:
-                    self.vehicle_status.heartbeat = True
-                    break
+                    with self._vehicle_status_lock:
+                        self._vehicle_status.heartbeat = True
+                        break
 
             tasks = [
                 self._monitor_health(),
@@ -482,18 +508,29 @@ class DroneModel:
                 self._monitor_flight_mode(),
                 self._monitor_armed_state(),
                 self._monitor_in_air_state(),
-                self._monitor_connection()
+                self._monitor_connection(),
+                self._update_ui_periodic()
             ]
-            
+
             await asyncio.gather(*tasks)
-            
+
+
         except Exception as e:
-            pass
+            print(e)
 
     async def _stop_async(self):
         self.running = False
         if self.main_task:
             self.main_task.cancel()
+
+        if self.ui_updater_task:
+            self.ui_updater_task.cancel()
+
+    async def _update_ui_periodic(self, interval: float = 0.5):
+        while self.running:
+            self.ui_update_signal.emit()
+
+            await asyncio.sleep(interval)
 
     async def _monitor_health(self):
         try:
@@ -501,96 +538,124 @@ class DroneModel:
                 if not self.running:
                     break
         except Exception as e:
-            pass
+            print(e)
 
     async def _monitor_position(self):
         try:
             async for position in self.drone.telemetry.position():
                 if not self.running:
                     break
-                self.vehicle_status.position.latitude = position.latitude_deg
-                self.vehicle_status.position.longitude = position.longitude_deg
-                self.vehicle_status.position.altitude = position.relative_altitude_m
+                with self._vehicle_status_lock:
+                    self._vehicle_status.position.latitude = position.latitude_deg
+                    self._vehicle_status.position.longitude = position.longitude_deg
+                    self._vehicle_status.position.altitude = position.relative_altitude_m
+
+                with self._waypoints_lock:
+                    if len(self._waypoints) > 0:
+                        horizontal_distance = self.haversine(position.latitude_deg,
+                                                             position.longitude_deg,
+                                                             self._waypoints[0].latitude,
+                                                             self._waypoints[0].longitude)
+                        vertical_distance = np.fabs(position.relative_altitude_m - self._waypoints[0].altitude)
+                        if (horizontal_distance < ALLOWABLE_HORIZONTAL_DISTANCE_TO_WAYPOINT) and (
+                                vertical_distance < ALLOWABLE_VERTICAL_DISTANCE_TO_WAYPOINT):
+                            print("MOVE COMPLETE")
+                            self._waypoints.pop(0)
         except Exception as e:
-            pass
+            print(e)
 
     async def _monitor_attitude(self):
         try:
             async for attitude in self.drone.telemetry.attitude_euler():
                 if not self.running:
                     break
-                self.vehicle_status.attitude.roll = math.radians(attitude.roll_deg)
-                self.vehicle_status.attitude.pitch = math.radians(attitude.pitch_deg) 
-                self.vehicle_status.attitude.yaw = math.radians(attitude.yaw_deg)
+
+                with self._vehicle_status_lock:
+                    self._vehicle_status.attitude.roll = math.radians(attitude.roll_deg)
+                    self._vehicle_status.attitude.pitch = math.radians(attitude.pitch_deg)
+                    self._vehicle_status.attitude.yaw = math.radians(attitude.yaw_deg)
         except Exception as e:
-            pass
+            print(e)
 
     async def _monitor_velocity(self):
         try:
             async for velocity in self.drone.telemetry.velocity_ned():
                 if not self.running:
                     break
-                self.vehicle_status.velocity.vx = velocity.north_m_s
-                self.vehicle_status.velocity.vy = velocity.east_m_s
-                self.vehicle_status.velocity.vz = velocity.down_m_s
+
+                with self._vehicle_status_lock:
+                    self._vehicle_status.velocity.vx = velocity.north_m_s
+                    self._vehicle_status.velocity.vy = velocity.east_m_s
+                    self._vehicle_status.velocity.vz = velocity.down_m_s
         except Exception as e:
-            pass
+            print(e)
 
     async def _monitor_battery(self):
         try:
             async for battery in self.drone.telemetry.battery():
                 if not self.running:
                     break
-                self.vehicle_status.battery_percentage = battery.remaining_percent
-                self.vehicle_status.battery_voltage = battery.voltage_v
+
+                with self._vehicle_status_lock:
+                    self._vehicle_status.battery_percentage = battery.remaining_percent
+                    self._vehicle_status.battery_voltage = battery.voltage_v
         except Exception as e:
-            pass
+            print(e)
 
     async def _monitor_flight_mode(self):
         try:
             async for flight_mode in self.drone.telemetry.flight_mode():
                 if not self.running:
                     break
-                if flight_mode == self.drone.telemetry.FlightMode.MANUAL:
-                    self.vehicle_status.flight_mode = FlightMode.MANUAL
-                elif flight_mode == self.drone.telemetry.FlightMode.MISSION:
-                    self.vehicle_status.flight_mode = FlightMode.MISSION
-                elif flight_mode == self.drone.telemetry.FlightMode.LAND:
-                    self.vehicle_status.flight_mode = FlightMode.LANDING
-                else:
-                    self.vehicle_status.flight_mode = FlightMode.MANUAL
+
+                with self._vehicle_status_lock:
+                    if flight_mode == mavsdk.system.telemetry.FlightMode.MANUAL:
+                        self._vehicle_status.flight_mode = FlightMode.MANUAL
+                    elif flight_mode == mavsdk.system.telemetry.FlightMode.MISSION:
+                        self._vehicle_status.flight_mode = FlightMode.MISSION
+                    elif flight_mode == mavsdk.system.telemetry.FlightMode.LAND:
+                        self._vehicle_status.flight_mode = FlightMode.LANDING
+                    else:
+                        self._vehicle_status.flight_mode = FlightMode.MANUAL
+
         except Exception as e:
-            pass
+            print(e)
 
     async def _monitor_armed_state(self):
         try:
             async for armed in self.drone.telemetry.armed():
                 if not self.running:
                     break
-                self.vehicle_status.armed = armed
+
+                with self._vehicle_status_lock:
+                    self._vehicle_status.armed = armed
         except Exception as e:
-            pass
+            print(e)
 
     async def _monitor_in_air_state(self):
         try:
             async for in_air in self.drone.telemetry.in_air():
                 if not self.running:
                     break
-                self.vehicle_status.in_air = in_air
+
+                with self._vehicle_status_lock:
+                    self._vehicle_status.in_air = in_air
         except Exception as e:
-            pass
+            print(e)
 
     async def _monitor_connection(self):
         try:
             async for state in self.drone.core.connection_state():
                 if not self.running:
                     break
-                self.vehicle_status.heartbeat = state.is_connected
+
+                with self._vehicle_status_lock:
+                    self._vehicle_status.heartbeat = state.is_connected
         except Exception as e:
-            pass
+            print(e)
 
     def status(self):
-        return self.vehicle_status
+        return self._vehicle_status
 
     async def arm(self):
         try:
@@ -601,7 +666,7 @@ class DroneModel:
             return True
         except ActionError as e:
             return False
-                
+
     def arm_sync(self):
         return self.run_async(self.arm())
 
@@ -611,7 +676,7 @@ class DroneModel:
             return True
         except ActionError as e:
             return False
-            
+
     def disarm_sync(self):
         return self.run_async(self.disarm())
 
@@ -622,45 +687,92 @@ class DroneModel:
             return True
         except ActionError as e:
             return False
-            
+
     def takeoff_sync(self, altitude):
         return self.run_async(self.takeoff(altitude))
-    
+
     async def land(self):
         try:
             await self.drone.action.land()
             return True
         except ActionError as e:
             return False
-            
+
     def land_sync(self):
         return self.run_async(self.land())
-        
+
     async def preflight_check(self) -> bool:
         checks_passed = True
-        
+
         async for health in self.drone.telemetry.health():
             if not health.is_armable:
                 checks_passed = False
             break
-        
+
         async for in_air in self.drone.telemetry.in_air():
             if in_air:
                 checks_passed = False
             break
-        
+
         return checks_passed
 
-    async def goto_location(self, latitude: float, longitude: float, altitude: float, yaw: float = 0.0):
+    async def goto_location(self, pos: 'Position'):
         try:
-            await self.drone.action.goto_location(latitude, longitude, altitude, yaw)
+            await self.drone.action.goto_location(pos.latitude, pos.longitude, pos.altitude, 0)
             return True
         except ActionError as e:
             return False
 
-    def goto_location_sync(self, latitude: float, longitude: float, altitude: float, yaw: float = 0.0):
-        return self.run_async(self.goto_location(latitude, longitude, altitude, yaw))
-        
+    # --------------------------------
+    # Helper methods
+
+    @staticmethod
+    def haversine(lat1: float, lon1: float, lat2: float, lon2: float):
+        earth_radius = 6371000
+        d_lat = np.radians(lat2 - lat1)
+        d_lon = np.radians(lon2 - lon1)
+
+        origin_lat = np.radians(lat1)
+        destination_lat = np.radians(lat2)
+
+        a = np.sin(d_lat / 2) ** 2 + np.sin(d_lon / 2) ** 2 * np.cos(origin_lat) * np.cos(destination_lat)
+        c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+
+        return earth_radius * c
+
+    # --------------------------------
+
+    async def _update_waypoints_on_drone(self):
+        while len(self._waypoints) > 0:
+            val = await self.goto_location(self._waypoints[0])
+            if not val:
+                print("move failed")
+
+    # --------------------------------
+    # Public stuff
+
+    def add_waypoint_to_end(self, new_pos: 'Position'):
+        self.loop_ready_event.wait()
+
+        with self._waypoints_lock:
+            self._waypoints.append(new_pos)
+
+        if len(self._waypoints) == 1:
+            asyncio.run_coroutine_threadsafe(self._update_waypoints_on_drone(), self.event_loop)
+
+    def remove_waypoint(self, index: int):
+        print(index)
+        with self._waypoints_lock:
+            self._waypoints.pop(index)
+
+    def get_waypoints(self):
+        with self._waypoints_lock:
+            return self._waypoints
+
+    def get_vehicle_status(self):
+        with self._vehicle_status_lock:
+            return self._vehicle_status
+
     def __del__(self):
         if hasattr(self, 'loop') and self.loop.is_running():
             self.loop.call_soon_threadsafe(self.loop.stop)
