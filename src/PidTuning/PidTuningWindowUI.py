@@ -1,8 +1,13 @@
 from PyQt5 import QtWidgets
-from PidTuning.rate_tab import RateTab
-from PidTuning.attitude_tab import AttitudeTab
-from PidTuning.velocity_tab import VelocityTab
-from PidTuning.position_tab import PositionTab
+from PyQt5.QtCore import QObject
+from .rate_tab import RateTab
+from .attitude_tab import AttitudeTab
+from .velocity_tab import VelocityTab
+from .position_tab import PositionTab
+
+class PIDTuning(QObject):
+    super().__init__()
+    
 
 class PidTuningWindowUI(QtWidgets.QWidget):
     def __init__(self):
