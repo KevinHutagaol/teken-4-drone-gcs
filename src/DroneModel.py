@@ -314,10 +314,7 @@ class DroneModel:
     
     async def set_position_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
         try:
-            if axis.lower() == "x":
-                param_name_p = "MPC_XY_P"
-                param_name_d = "MPC_XY_VEL_P_ACC"
-            elif axis.lower() == "y":
+            if axis.lower() == "x" or axis.lower() == "y":
                 param_name_p = "MPC_XY_P"
                 param_name_d = "MPC_XY_VEL_P_ACC"
             elif axis.lower() == "z":
