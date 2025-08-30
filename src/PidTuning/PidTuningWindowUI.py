@@ -1,11 +1,19 @@
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, QObject
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
+from DroneModel import DroneModel
 import csv
 import os
 import numpy as np
+
+class PIDTuning(QObject):
+    def __init__(self, drone_model: DroneModel):
+        super().__init__()
+        self.drone_model = drone_model
+        self.current_param = None
+
 
 class PidTuningWindowUI(QWidget):
     def __init__(self):
@@ -538,4 +546,3 @@ class PidTuningWindowUI(QWidget):
         self.ButtonAuto_Position.setText(_translate("Form", "Auto"))
         self.ButtonSubmit_Position.setText(_translate("Form", "Submit"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabPosi), _translate("Form", "Position Controller"))
-
