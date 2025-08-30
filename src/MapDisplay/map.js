@@ -1,4 +1,4 @@
-var map = L.map('map').setView([-6.366, 106.825], 16)
+var map = L.map('map').setView([47.399, 8.546], 16)
 
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 20, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -38,7 +38,7 @@ var mouse_position = new L.Control.MousePosition({
     "position": "topright",
     "separator": " | ",
     "emptyString": "",
-    "lngFirst": true,
+    "lngFirst": false,
     "numDigits": 20,
     "prefix": "Coordinates:",
 });
@@ -123,42 +123,57 @@ function map_on_add_waypoint_button_clicked(checked) {
 let markersGroup = L.layerGroup();
 map.addLayer(markersGroup);
 
-let path;
+let droneMarker = null;
+let waypointMarkers = [];
+let currentHighlightedMarker = -1;
 
 function renderMarkers(dronePosition, positions, highlightedMarker) {
+    if (highlightedMarker >= 0) {
+        currentHighlightedMarker = highlightedMarker;
+    }
 
-    markersGroup.clearLayers();
+    if (!droneMarker) {
+        droneMarker = L.marker(dronePosition, {icon: droneIcon}).addTo(map);
+    } else {
+        droneMarker.setLatLng(dronePosition)
+    }
 
-    L.marker(dronePosition, {icon: droneIcon}).addTo(map);
-
-
-    positions.forEach((pos, i) => {
-        if (i === highlightedMarker) {
-            L.marker([pos[0], pos[1]], {icon: redIcon}).addTo(markersGroup);
-        } else {
-            L.marker([pos[0], pos[1]], {icon: grayIcon}).addTo(markersGroup);
+    if (!waypointMarkers || waypointMarkers.length !== positions.length) {
+        markersGroup.clearLayers();
+        for (let i = 0; i < positions.length; i++) {
+            let mark = L.marker(positions[i]).addTo(markersGroup);
+            mark.setIcon(i === currentHighlightedMarker ? redIcon : grayIcon)
+            waypointMarkers.push(mark)
         }
-    })
+    } else {
+        for (let i = 0; i < waypointMarkers.length; i++) {
+            waypointMarkers[i].setLatLng(positions[i])
+            waypointMarkers[i].setIcon(i === currentHighlightedMarker ? redIcon : grayIcon)
+        }
+    }
 
 }
 
+let path;
+
 function renderPolyLine(dronePosition, positions) {
+    const newPath = [dronePosition].concat(positions);
+
     if (path) {
-        map.removeLayer(path);
+        path.setLatLngs(newPath);
+    } else {
+        path = L.polyline.antPath([dronePosition].concat(positions), {
+            "delay": 1000,
+            "dashArray": [10, 20],
+            "weight": 5,
+            "color": "#0000FF",
+            "pulseColor": "#FFFFFF",
+            "paused": false,
+            "reverse": false,
+            "hardwareAccelerated": true
+        });
+        map.addLayer(path);
     }
-
-    path = L.polyline.antPath([dronePosition].concat(positions), {
-        "delay": 1000,
-        "dashArray": [10, 20],
-        "weight": 5,
-        "color": "#0000FF",
-        "pulseColor": "#FFFFFF",
-        "paused": false,
-        "reverse": false,
-        "hardwareAccelerated": true
-    });
-
-    map.addLayer(path);
 }
 
 

@@ -21,7 +21,7 @@ class MainWindow(QObject):
         self._model = model
         self.map_display_window_controller = MapDisplayWindow(view=self._view.map_display_window, model=self._model)
 
-        self._model._update_ui_callback
+        self._model.ui_update_signal.connect(self.update_ui)
 
         self._connect_window_buttons()
 
@@ -46,6 +46,7 @@ class MainWindow(QObject):
             lambda : self._view.set_data_log_checked(False)
         )
 
+    @pyqtSlot()
     def update_ui(self):
         self.update_map_display_ui()
 

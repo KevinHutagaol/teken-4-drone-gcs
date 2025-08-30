@@ -23,7 +23,7 @@ import resources_rc
 
 
 def sigint_handler(*args):
-    print("Shutting Down")
+    print("\nShutting Down")
     QApplication.quit()
     exit(0)
 
@@ -40,5 +40,16 @@ if __name__ == "__main__":
 
     drone.start()
     main_view.show()
+
+    timeout = 15
+
+    while not drone.get_vehicle_status().heartbeat:
+        print("Waiting for heartbeat...")
+        time.sleep(0.5)
+        app.processEvents()
+
+    if drone.get_vehicle_status().heartbeat:
+        drone.arm_sync()
+        drone.takeoff_sync(5)
 
     sys.exit(app.exec_())
