@@ -5,14 +5,12 @@ from PyQt5.QtCore import pyqtSignal
 import csv, os, numpy as np
 
 class AttitudeTab(QtWidgets.QWidget):
-    # Signals
-    pid_submitted = pyqtSignal(str, float, float, float)  # axis, p, i, d
-    load_from_drone = pyqtSignal(str)  # axis
+    pid_submitted = pyqtSignal(str, float, float, float)
+    load_from_drone = pyqtSignal(str)
     
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Attitude Control")
-        # PID values for each axis
         self.pid_values = {
             "Roll": {"P": 6.5, "I": 0.0, "D": 0.0},
             "Pitch": {"P": 6.5, "I": 0.0, "D": 0.0}, 
@@ -70,23 +68,7 @@ class AttitudeTab(QtWidgets.QWidget):
         self.p_spinbox.setValue(self.pid_values[self.tuning_mode]["P"])
         self.p_spinbox.valueChanged.connect(self.on_pid_changed)
         
-        self.i_spinbox = QtWidgets.QDoubleSpinBox()
-        self.i_spinbox.setRange(0, 100)
-        self.i_spinbox.setDecimals(2)
-        self.i_spinbox.setSingleStep(0.01)
-        self.i_spinbox.setValue(self.pid_values[self.tuning_mode]["I"])
-        self.i_spinbox.valueChanged.connect(self.on_pid_changed)
-        
-        self.d_spinbox = QtWidgets.QDoubleSpinBox()
-        self.d_spinbox.setRange(0, 100)
-        self.d_spinbox.setDecimals(2)
-        self.d_spinbox.setSingleStep(0.01)
-        self.d_spinbox.setValue(self.pid_values[self.tuning_mode]["D"])
-        self.d_spinbox.valueChanged.connect(self.on_pid_changed)
-        
         pid_layout.addRow("P", self.p_spinbox)
-        pid_layout.addRow("I", self.i_spinbox)
-        pid_layout.addRow("D", self.d_spinbox)
         right_layout.addWidget(pid_widget)
         
         # Control Buttons
@@ -98,21 +80,9 @@ class AttitudeTab(QtWidgets.QWidget):
         button_layout1.addWidget(self.btn_submit)
         right_layout.addLayout(button_layout1)
         
-        button_layout2 = QtWidgets.QHBoxLayout()
-        self.btn_pause = QtWidgets.QPushButton("Pause")
-        self.btn_continue = QtWidgets.QPushButton("Continue")
-        self.btn_auto = QtWidgets.QPushButton("Auto")
-        
-        button_layout2.addWidget(self.btn_pause)
-        button_layout2.addWidget(self.btn_continue)
-        button_layout2.addWidget(self.btn_auto)
-        
-        self.btn_pause.clicked.connect(self.pause_control)
-        self.btn_continue.clicked.connect(self.continue_control)
         self.btn_submit.clicked.connect(self.submit_pid_values)
         self.btn_load.clicked.connect(self.load_pid_from_drone)
         
-        right_layout.addLayout(button_layout2)
         main_layout.addWidget(right_widget, stretch=1)
         
     def on_tuning_changed(self, mode):
@@ -122,30 +92,22 @@ class AttitudeTab(QtWidgets.QWidget):
         
     def on_pid_changed(self):
         self.pid_values[self.tuning_mode]["P"] = self.p_spinbox.value()
-        self.pid_values[self.tuning_mode]["I"] = self.i_spinbox.value()
-        self.pid_values[self.tuning_mode]["D"] = self.d_spinbox.value()
         self.update_pid_chart()
         
     def update_pid_inputs(self):
         self.p_spinbox.setValue(self.pid_values[self.tuning_mode]["P"])
-        self.i_spinbox.setValue(self.pid_values[self.tuning_mode]["I"])
-        self.d_spinbox.setValue(self.pid_values[self.tuning_mode]["D"])
         
     def update_pid_chart(self):
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         
-        # Get current PID values
         p_val = self.pid_values[self.tuning_mode]["P"]
-        i_val = self.pid_values[self.tuning_mode]["I"]
-        d_val = self.pid_values[self.tuning_mode]["D"]
         
-        # Create bar chart
-        categories = ['P', 'I', 'D']
-        values = [p_val, i_val, d_val]
-        colors = ['red', 'blue', 'green']
+        categories = ['P']
+        values = [p_val]
+        colors = ['red']
         
-        bars = ax.bar(categories, values, color=colors, alpha=0.7)
+        bars = ax.bar(categories, values, color=colors, alpha=0.7, width=0.4)
         
         # Add value labels on bars
         for bar, value in zip(bars, values):
@@ -161,36 +123,22 @@ class AttitudeTab(QtWidgets.QWidget):
         self.figure.tight_layout()
         self.canvas.draw()
         
-    def pause_control(self):
-        print(f"Attitude control paused for {self.tuning_mode}")
-        
-    def continue_control(self):
-        print(f"Attitude control continued for {self.tuning_mode}")
-        
     def submit_pid_values(self):
-        """Submit PID values to drone"""
         p = self.pid_values[self.tuning_mode]['P']
         i = self.pid_values[self.tuning_mode]['I']
         d = self.pid_values[self.tuning_mode]['D']
         
-        print(f"Submitting Attitude PID values for {self.tuning_mode}: P={p}, I={i}, D={d}")
         self.pid_submitted.emit(self.tuning_mode, p, i, d)
         
     def load_pid_from_drone(self):
-        """Request to load PID values from drone"""
-        print(f"Loading Attitude PID values from drone for {self.tuning_mode}")
         self.load_from_drone.emit(self.tuning_mode)
         
     def update_pid_values_from_drone(self, axis, params):
-        """Update PID values received from drone"""
         if axis in self.pid_values and params:
             self.pid_values[axis]["P"] = params.get("p", 0.0)
             self.pid_values[axis]["I"] = params.get("i", 0.0)
             self.pid_values[axis]["D"] = params.get("d", 0.0)
             
-            # Update UI if this is the current tuning mode
             if axis == self.tuning_mode:
                 self.update_pid_inputs()
                 self.update_pid_chart()
-                
-            print(f"Updated {axis} PID values from drone: P={params.get('p', 0.0)}, I={params.get('i', 0.0)}, D={params.get('d', 0.0)}")

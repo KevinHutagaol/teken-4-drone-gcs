@@ -264,13 +264,10 @@ class DroneModel(QObject):
     
     def set_rate_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
         return self.run_async(self.set_rate_pid_params(p_gain, i_gain, d_gain, axis))
-    
-
 
     def set_position_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
         return self.run_async(self.set_position_pid_params(p_gain, i_gain, d_gain, axis))
 
-    
     async def set_velocity_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
         try:
             if axis.lower() == "x" or axis.lower() == "y":
@@ -291,8 +288,6 @@ class DroneModel(QObject):
         except Exception as e:
             print(e)
             return False
-
-    
 
     def get_all_pid_parameters(self):
         try:
@@ -417,7 +412,6 @@ class DroneModel(QObject):
                         vertical_distance = np.fabs(position.relative_altitude_m - self._waypoints[0].altitude)
                         if (horizontal_distance < ALLOWABLE_HORIZONTAL_DISTANCE_TO_WAYPOINT) and (
                                 vertical_distance < ALLOWABLE_VERTICAL_DISTANCE_TO_WAYPOINT):
-                            print("MOVE COMPLETE")
                             self._waypoints.pop(0)
         except Exception as e:
             print(e)

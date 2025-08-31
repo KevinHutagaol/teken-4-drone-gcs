@@ -18,7 +18,6 @@ class PidTuningWindowUI(QtWidgets.QWidget):
         self.tabWidget = QtWidgets.QTabWidget()
         layout.addWidget(self.tabWidget)
         
-        # Create tabs and store references
         self.rate_tab = RateTab()
         self.attitude_tab = AttitudeTab()
         self.velocity_tab = VelocityTab()
@@ -29,86 +28,80 @@ class PidTuningWindowUI(QtWidgets.QWidget):
         self.tabWidget.addTab(self.velocity_tab, "Velocity Controller")
         self.tabWidget.addTab(self.position_tab, "Position Controller")
         
-        # Connect tab signals directly to drone model functions
         self.setup_connections()
+        
+    def is_drone_connected(self):
+        return self.drone_model is not None
+    
+    def get_connection_status(self):
+        if not self.drone_model:
+            return "DroneModel: None"
+        
+        if hasattr(self.drone_model, 'status'):
+            try:
+                status = self.drone_model.status()
+                return f"DroneModel: Connected, Heartbeat: {status.heartbeat}"
+            except:
+                return "DroneModel: Available but status unavailable"
+        
+        return "DroneModel: Available"
     
     def setup_connections(self):
-        """Connect tab signals directly to DroneModel methods"""
-        if not self.drone_model:
+        if not self.is_drone_connected():
             return
             
-        # Rate tab connections
         if hasattr(self.rate_tab, 'pid_submitted'):
-            self.rate_tab.pid_submitted.connect(self.on_rate_pid_submitted)
+            self.rate_tab.pid_submitted.connect(self._handle_rate_pid_submit)
         if hasattr(self.rate_tab, 'load_from_drone'):
-            self.rate_tab.load_from_drone.connect(self.on_rate_load_from_drone)
+            self.rate_tab.load_from_drone.connect(self._load_rate_pid_from_drone)
             
-        # Attitude tab connections
         if hasattr(self.attitude_tab, 'pid_submitted'): 
-            self.attitude_tab.pid_submitted.connect(self.on_attitude_pid_submitted)
+            self.attitude_tab.pid_submitted.connect(self._handle_attitude_pid_submit)
         if hasattr(self.attitude_tab, 'load_from_drone'):
-            self.attitude_tab.load_from_drone.connect(self.on_attitude_load_from_drone)
+            self.attitude_tab.load_from_drone.connect(self._load_attitude_pid_from_drone)
             
-        # Velocity tab connections
         if hasattr(self.velocity_tab, 'pid_submitted'):
-            self.velocity_tab.pid_submitted.connect(self.on_velocity_pid_submitted)
+            self.velocity_tab.pid_submitted.connect(self._handle_velocity_pid_submit)
         if hasattr(self.velocity_tab, 'load_from_drone'):
-            self.velocity_tab.load_from_drone.connect(self.on_velocity_load_from_drone)
+            self.velocity_tab.load_from_drone.connect(self._load_velocity_pid_from_drone)
             
-        # Position tab connections
         if hasattr(self.position_tab, 'pid_submitted'):
-            self.position_tab.pid_submitted.connect(self.on_position_pid_submitted)
+            self.position_tab.pid_submitted.connect(self._handle_position_pid_submit)
         if hasattr(self.position_tab, 'load_from_drone'):
-            self.position_tab.load_from_drone.connect(self.on_position_load_from_drone)
+            self.position_tab.load_from_drone.connect(self._load_position_pid_from_drone)
     
-    def on_rate_pid_submitted(self, axis, p, i, d):
-        """Submit rate PID values directly to drone model"""
-        if self.drone_model:
-            success = self.drone_model.set_rate_pid_params_sync(p, i, d, axis.lower())
+    def _handle_rate_pid_submit(self, axis, p, i, d):
+        self.drone_model.set_rate_pid_params_sync(p, i, d, axis.lower())
     
-    def on_rate_load_from_drone(self, axis):
-        """Load rate PID values from drone model"""
-        if self.drone_model:
-            params = self.drone_model.get_rate_pid_params_sync(axis.lower())
-            if params:
-                self.rate_tab.update_pid_values_from_drone(axis, params)
-        
-    def on_attitude_pid_submitted(self, axis, p, i, d):
-        """Submit attitude PID values directly to drone model"""
-        if self.drone_model:
-            success = self.drone_model.set_attitude_pid_params_sync(p, i, d, axis.lower())
+    def _handle_attitude_pid_submit(self, axis, p, i, d):
+        self.drone_model.set_attitude_pid_params_sync(p, i, d, axis.lower())
     
-    def on_attitude_load_from_drone(self, axis):
-        """Load attitude PID values from drone model"""
-        if self.drone_model:
-            params = self.drone_model.get_attitude_pid_params_sync(axis.lower())
-            if params:
-                self.attitude_tab.update_pid_values_from_drone(axis, params)
-        
-    def on_velocity_pid_submitted(self, axis, p, i, d):
-        """Submit velocity PID values directly to drone model"""
+    def _handle_velocity_pid_submit(self, axis, p, i, d):
         px4_axis = "x" if axis.lower() == "horizontal" else "z"
-        if self.drone_model:
-            success = self.drone_model.set_velocity_pid_params_sync(p, i, d, px4_axis)
+        self.drone_model.set_velocity_pid_params_sync(p, i, d, px4_axis)
     
-    def on_velocity_load_from_drone(self, axis):
-        """Load velocity PID values from drone model"""
+    def _handle_position_pid_submit(self, axis, p, i, d):
         px4_axis = "x" if axis.lower() == "horizontal" else "z"
-        if self.drone_model:
-            params = self.drone_model.get_velocity_pid_params_sync(px4_axis)
-            if params:
-                self.velocity_tab.update_pid_values_from_drone(axis, params)
-        
-    def on_position_pid_submitted(self, axis, p, i, d):
-        """Submit position PID values directly to drone model"""
-        px4_axis = "x" if axis.lower() == "horizontal" else "z"
-        if self.drone_model:
-            success = self.drone_model.set_position_pid_params_sync(p, i, d, px4_axis)
+        self.drone_model.set_position_pid_params_sync(p, i, d, px4_axis)
     
-    def on_position_load_from_drone(self, axis):
-        """Load position PID values from drone model"""
+    def _load_rate_pid_from_drone(self, axis):
+        params = self.drone_model.get_rate_pid_params_sync(axis.lower())
+        if params:
+            self.rate_tab.update_pid_values_from_drone(axis, params)
+    
+    def _load_attitude_pid_from_drone(self, axis):
+        params = self.drone_model.get_attitude_pid_params_sync(axis.lower())
+        if params:
+            self.attitude_tab.update_pid_values_from_drone(axis, params)
+    
+    def _load_velocity_pid_from_drone(self, axis):
         px4_axis = "x" if axis.lower() == "horizontal" else "z"
-        if self.drone_model:
-            params = self.drone_model.get_position_pid_params_sync(px4_axis)
-            if params:
-                self.position_tab.update_pid_values_from_drone(axis, params)
+        params = self.drone_model.get_velocity_pid_params_sync(px4_axis)
+        if params:
+            self.velocity_tab.update_pid_values_from_drone(axis, params)
+    
+    def _load_position_pid_from_drone(self, axis):
+        px4_axis = "x" if axis.lower() == "horizontal" else "z"
+        params = self.drone_model.get_position_pid_params_sync(px4_axis)
+        if params:
+            self.position_tab.update_pid_values_from_drone(axis, params)
