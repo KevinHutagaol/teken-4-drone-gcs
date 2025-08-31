@@ -113,8 +113,6 @@ class DroneModel(QObject):
             return {"p": 0.0, "i": 0.0, "d": 0.0}
         return self.run_async(self.get_attitude_pid_params(axis))
 
-
-
     async def get_rate_pid_params(self, axis: str = "roll"):
         try:
             if axis.lower() == "roll":
@@ -144,12 +142,8 @@ class DroneModel(QObject):
         try:
             if axis.lower() in ["x", "y"]:
                 await self.drone.param.set_param_float("MPC_XY_P", p_gain)
-                await self.drone.param.set_param_float("MPC_XY_VEL_P_ACC", i_gain)
-                await self.drone.param.set_param_float("MPC_XY_VEL_D_ACC", d_gain)
             elif axis.lower() == "z":
                 await self.drone.param.set_param_float("MPC_Z_P", p_gain)
-                await self.drone.param.set_param_float("MPC_Z_VEL_P_ACC", i_gain)
-                await self.drone.param.set_param_float("MPC_Z_VEL_D_ACC", d_gain)
             return True
         except Exception as e:
             print(e)
