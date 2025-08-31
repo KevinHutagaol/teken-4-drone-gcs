@@ -1,11 +1,13 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from .rate_tab import RateTab
 from .attitude_tab import AttitudeTab
 from .velocity_tab import VelocityTab
 from .position_tab import PositionTab
 
 class PidTuningWindowUI(QtWidgets.QWidget):
+    window_closed_signal = pyqtSignal()
+
     def __init__(self, drone_model=None):
         super().__init__()
         self.setObjectName("Self")
@@ -105,3 +107,9 @@ class PidTuningWindowUI(QtWidgets.QWidget):
         params = self.drone_model.get_position_pid_params_sync(px4_axis)
         if params:
             self.position_tab.update_pid_values_from_drone(axis, params)
+
+
+    def closeEvent(self, e):
+        e.ignore()
+        self.hide()
+        self.window_closed_signal.emit()
