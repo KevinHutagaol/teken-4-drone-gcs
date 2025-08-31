@@ -13,9 +13,9 @@ class RateTab(QtWidgets.QWidget):
         super().__init__()
         self.setWindowTitle("Rate Control")
         self.pid_values = {
-            "Roll": {"P": 4.0, "I": 0.0, "D": 0.0},
-            "Pitch": {"P": 4.0, "I": 0.0, "D": 0.0}, 
-            "Yaw": {"P": 4.0, "I": 0.0, "D": 0.0}
+            "Roll": {"P": 0.15, "I": 0.20, "D": 0.003},
+            "Pitch": {"P": 0.15, "I": 0.20, "D": 0.003}, 
+            "Yaw": {"P": 0.2, "I": 0.1, "D": 0.0}
         }
         self.tuning_mode = "Roll"
         self.init_ui()

@@ -12,8 +12,8 @@ class VelocityTab(QtWidgets.QWidget):
         super().__init__()
         self.setWindowTitle("Velocity Control")
         self.pid_values = {
-            "Horizontal": {"P": 1.2, "I": 0.0, "D": 0.0},
-            "Vertical": {"P": 2.0, "I": 0.0, "D": 0.0}
+            "Horizontal": {"P": 0.1, "I": 0.02, "D": 0.01},
+            "Vertical": {"P": 0.2, "I": 0.15, "D": 0.0}
         }
         self.tuning_mode = "Horizontal"
         self.init_ui()
