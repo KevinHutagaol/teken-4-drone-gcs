@@ -3,7 +3,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QGridLayout, QPushButton, \
     QToolButton, QSizePolicy
 
-from DataLogging.DataLoggingWindowUI import DataLoggingWindowUI
+from DataLogging.DataLoggingWindowUI import DataLoggingWindowUI, DataLoggingWindow
 from MapDisplay.MapDisplayWindowUI import MapDisplayWindow, MapDisplayWindowUI
 from PidTuning.PidTuningWindowUI import PidTuningWindowUI
 
@@ -24,6 +24,7 @@ class MainWindow(QObject):
         self._model = model
         self.map_display_window_controller = MapDisplayWindow(view=self._view.map_display_window, model=self._model)
         self.drone_visualization_controller = DroneVisualisation(view=self._view.drone_visualisation_widget)
+        self.data_logging_controller = DataLoggingWindow(view=self._view.data_logging_window, model=self._model)
 
         self._model.ui_update_signal.connect(self.update_ui)
 
