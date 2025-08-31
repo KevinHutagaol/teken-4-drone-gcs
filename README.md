@@ -189,9 +189,24 @@ make px4_sitl gz_x500
 ### Default PID Parameters
 
 Parameter PID default yang bisa digunakan sebagai starting point:
-- **Roll/Pitch Rate**: P=0.15, I=0.05, D=0.003
-- **Yaw Rate**: P=0.2, I=0.02, D=0.0
-- **Attitude**: P=6.5, I=0, D=0
+
+#### Rate Control
+- **Roll Rate**: P=0.15, I=0.20, D=0.003
+- **Pitch Rate**: P=0.15, I=0.20, D=0.003
+- **Yaw Rate**: P=0.2, I=0.1, D=0.0
+
+#### Attitude Control
+- **Roll Attitude**: P=6.5, I=0.0, D=0.0
+- **Pitch Attitude**: P=6.5, I=0.0, D=0.0
+- **Yaw Attitude**: P=2.8, I=0.0, D=0.0
+
+#### Velocity Control
+- **Horizontal Velocity**: P=0.1, I=0.02, D=0.01
+- **Vertical Velocity**: P=0.2, I=0.15, D=0.0
+
+#### Position Control
+- **Horizontal Position**: P=0.95, I=0.0, D=0.0
+- **Vertical Position**: P=1.0, I=0.0, D=0.0
 
 ## Tim
 
