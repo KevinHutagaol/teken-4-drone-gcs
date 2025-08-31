@@ -76,22 +76,35 @@ source ~/.bashrc
 make px4_sitl gz_x500
 ```
 
-### 2. Install Python Dependencies
-
-```bash
-# Pastikan berada di direktori
-cd teken-4-drone-gcs
-
-# Install Python dependencies
-pip install -e .
-```
-
-### 3. Setup Project
+### 2. Setup Project
 
 ```bash
 # Clone project repository
-git clone <repository-url>
+git clone https://github.com/KevinHutagaol/teken-4-drone-gcs.git
 cd teken-4-drone-gcs
+```
+
+### 3. Setup Development Environment
+
+- Upgrade versi ubuntu (jika diperlukan)
+
+```bash
+sudo apt install update
+sudo apt install upgrade
+python3 -m pip install --upgrade pip
+```
+
+- Buat venv jika belum (Minimal Python 3.10)
+
+```bash
+python3.10 -m venv "./.venv"
+source ./.venv/bin/activate
+```
+
+- Install dependencies
+
+```bash
+pip install -e .
 ```
 
 ## Cara Menjalankan
@@ -111,8 +124,8 @@ make px4_sitl gz_x500
 
 ```bash
 # Terminal 2: Run aplikasi GCS (Masuk ke venv)
-cd teken-4-drone-gcs/src
-python main.py
+cd teken-4-drone-gcs
+python3 ./src/main.py
 ```
 
 ### 3. Verifikasi Koneksi
@@ -124,16 +137,39 @@ python main.py
 ## Struktur Aplikasi
 
 ```
-teken-4-drone-gcs/
-├── src/
-│   ├── main.py              # Entry point aplikasi
-│   ├── gui/                 # PyQt5 GUI components
-│   ├── communication/       # MAVLink/MAVSDK handlers
-│   ├── visualization/       # PyQt3D dan Matplotlib
-│   └── utils/              # Helper functions
-├── resources/              # Icons, images, maps
-├── docs/                   # Documentation
-└── requirements.txt        # Python dependencies
+teken-4-drone-gcs
+├── README.md
+├── outputs
+│   └── ... 
+├── pyproject.toml
+├── resources
+│   └── ... 
+├── resources.qrc
+└── src
+    ├── DataLogging
+    │   └── DataLoggingWindowUI.py
+    ├── DroneModel.py
+    ├── MainWindow
+    │   ├── DroneVisualisation.py
+    │   ├── DroneVisualisation3DWindow.py
+    │   ├── MainWindow.py
+    │   ├── VehicleCondition.py
+    │   └── VehicleDirection.py
+    ├── MapDisplay
+    │   ├── MapDisplayWindowUI.py
+    │   ├── map.css
+    │   ├── map.html
+    │   └── map.js
+    ├── PidTuning
+    │   ├── PidTuningWindowUI.py
+    │   ├── attitude_tab.py
+    │   ├── position_tab.py
+    │   ├── rate_tab.py
+    │   └── velocity_tab.py
+    ├── VehicleStatus.py
+    ├── main.py
+    └── resources_rc.py
+
 ```
 
 ## Fitur Aplikasi
