@@ -113,8 +113,6 @@ class DroneModel(QObject):
             return {"p": 0.0, "i": 0.0, "d": 0.0}
         return self.run_async(self.get_attitude_pid_params(axis))
 
-
-
     async def get_rate_pid_params(self, axis: str = "roll"):
         try:
             if axis.lower() == "roll":
@@ -144,12 +142,8 @@ class DroneModel(QObject):
         try:
             if axis.lower() in ["x", "y"]:
                 await self.drone.param.set_param_float("MPC_XY_P", p_gain)
-                await self.drone.param.set_param_float("MPC_XY_VEL_P_ACC", i_gain)
-                await self.drone.param.set_param_float("MPC_XY_VEL_D_ACC", d_gain)
             elif axis.lower() == "z":
                 await self.drone.param.set_param_float("MPC_Z_P", p_gain)
-                await self.drone.param.set_param_float("MPC_Z_VEL_P_ACC", i_gain)
-                await self.drone.param.set_param_float("MPC_Z_VEL_D_ACC", d_gain)
             return True
         except Exception as e:
             print(e)
@@ -266,13 +260,10 @@ class DroneModel(QObject):
     
     def set_rate_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "roll"):
         return self.run_async(self.set_rate_pid_params(p_gain, i_gain, d_gain, axis))
-    
-
 
     def set_position_pid_params_sync(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
         return self.run_async(self.set_position_pid_params(p_gain, i_gain, d_gain, axis))
 
-    
     async def set_velocity_pid_params(self, p_gain: float, i_gain: float, d_gain: float, axis: str = "x"):
         try:
             if axis.lower() == "x" or axis.lower() == "y":
@@ -293,8 +284,6 @@ class DroneModel(QObject):
         except Exception as e:
             print(e)
             return False
-
-    
 
     def get_all_pid_parameters(self):
         try:
@@ -419,7 +408,6 @@ class DroneModel(QObject):
                         vertical_distance = np.fabs(position.relative_altitude_m - self._waypoints[0].altitude)
                         if (horizontal_distance < ALLOWABLE_HORIZONTAL_DISTANCE_TO_WAYPOINT) and (
                                 vertical_distance < ALLOWABLE_VERTICAL_DISTANCE_TO_WAYPOINT):
-                            print("MOVE COMPLETE")
                             self._waypoints.pop(0)
                             self.ui_update_signal.emit(True)
         except Exception as e:
