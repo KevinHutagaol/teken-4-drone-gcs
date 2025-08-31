@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from PyQt5 import QtCore, QtGui, QtWidgets
 from pyqtgraph import PlotWidget, mkPen
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QFileDialog
 from PyQt5.QtGui import QIntValidator
 import numpy as np
 
@@ -114,6 +114,8 @@ class DataLoggingWindow(QObject):
             plt.plot(self.time_stamp, [att.yaw for att in self.attitude], label="Yaw $(rad)$")
             plt.ylabel("Attitude")
 
+
+
         plt.legend(loc="upper left")
         plt.xlabel("Time (ms)")
         plt.grid()
@@ -142,8 +144,20 @@ class DataLoggingWindow(QObject):
                      "lat(°)", "lon(°)", "alt(m)",
                      "roll(rad)", "pitch(rad)", "yaw(rad)"]
         )
-        print(drone_df)
-        drone_df.to_csv('drone_data.csv', index=False)
+
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self._view,
+            "Save File",
+            "drone_data.csv",
+            "CSV Files (*.csv);;All Files (*)",
+            options=options
+        )
+
+        if file_path:
+            drone_df.to_csv(file_path, index=False)
 
 
 class DataLoggingWindowUI(QWidget):
