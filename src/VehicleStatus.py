@@ -8,6 +8,15 @@ class FlightMode(Enum):
     MISSION = 1
     LANDING = 2
 
+    def __str__(self):
+        match self:
+            case self.MANUAL:
+                return "manual"
+            case self.LANDING:
+                return "landing"
+            case self.MISSION:
+                return "mission"
+
 
 @dataclass
 class Position:
@@ -36,12 +45,13 @@ class Attitude:
 
     # TODO: More stuff that is useful for attitude
 
+
 @dataclass
 class Velocity:
     vx: float = 0.0
     vy: float = 0.0
     vz: float = 0.0
-    
+
     def __init__(self, vx, vy, vz):
         self.vx = vx
         self.vy = vy
@@ -63,4 +73,3 @@ class VehicleStatus:
     battery_voltage: float
     battery_percentage: float
     flight_mode: FlightMode
-

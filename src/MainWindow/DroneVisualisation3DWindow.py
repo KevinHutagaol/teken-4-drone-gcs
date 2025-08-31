@@ -1,8 +1,11 @@
+import numpy as np
 from PyQt5 import Qt3DExtras, Qt3DCore
 from PyQt5.Qt3DExtras import QSphereMesh
 from PyQt5.Qt3DRender import QGeometry, QMesh
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtProperty, QPropertyAnimation, QUrl
 from PyQt5.QtGui import QMatrix4x4, QVector3D, QQuaternion
+
+from VehicleStatus import Attitude
 
 
 class OrbitTransformController(QObject):
@@ -13,6 +16,14 @@ class OrbitTransformController(QObject):
         self._radius = 1
         self._angle = 0
         self._scale = 1
+        self._attitude = Attitude(0, 0, 0)
+        self._rotation  = QQuaternion()
+
+        self._rotation_animation = QPropertyAnimation(self)
+        self._rotation_animation.setTargetObject(self)
+        self._rotation_animation.setPropertyName(b"rotation")
+        # 0.1s update time (from DroneModel)
+        self._rotation_animation.setDuration(100)
 
     def setTarget(self, t):
         self._target = t
@@ -38,27 +49,45 @@ class OrbitTransformController(QObject):
     def getRadius(self):
         return self._radius
 
-    def setAngle(self, angle):
-        if self._angle != angle:
-            self._angle = angle
-            self.updateMatrix()
-            self.angleChanged.emit()
+    def getAttitude(self):
+        return self._attitude
 
-    def getAngle(self):
-        return self._angle
+    def setAttitude(self, attitude: Attitude):
+        self._attitude = attitude
+        target_rotation = QQuaternion.fromEulerAngles(
+            np.rad2deg(self._attitude.pitch), np.rad2deg(self._attitude.yaw), np.rad2deg(self._attitude.roll)
+        )
+        self._rotation_animation.stop()
+        self._rotation_animation.setStartValue(self._rotation)
+        self._rotation_animation.setEndValue(target_rotation)
+        self._rotation_animation.start()
+        self.attitudeChanged.emit()
+
+
+    def getRotation(self):
+        return self._rotation
+
+    def setRotation(self, rotation: QQuaternion):
+        if self._rotation != rotation:
+            self._rotation = rotation
+            self.updateMatrix()
+            self.rotationChanged.emit()
 
     def updateMatrix(self):
         self._matrix.setToIdentity()
-        self._matrix.rotate(self._angle, QVector3D(0, 1, 0))
         self._matrix.translate(self._radius, 0, 0)
         self._matrix.scale(self._scale)
+        self._matrix.rotate(self._rotation)
         if self._target is not None:
             self._target.setMatrix(self._matrix)
 
-    angleChanged = pyqtSignal()
+    attitudeChanged = pyqtSignal()
+    rotationChanged = pyqtSignal()
     radiusChanged = pyqtSignal()
     scaleChanged = pyqtSignal()
-    angle = pyqtProperty(float, getAngle, setAngle, notify=angleChanged)
+
+    attitude = pyqtProperty(Attitude, getAttitude, setAttitude, notify=attitudeChanged)
+    rotation = pyqtProperty(QQuaternion, getRotation, setRotation, notify=rotationChanged)
     radius = pyqtProperty(float, getRadius, setRadius, notify=radiusChanged)
     scale = pyqtProperty(QVector3D, getScale, setScale, notify=scaleChanged)
 
@@ -87,22 +116,6 @@ class DroneVisualisation3DWindow(Qt3DExtras.Qt3DWindow):
 
         # Material
         self.material = Qt3DExtras.QPhongMaterial(self.rootEntity)
-
-        # # Torus
-        # self.torusEntity = Qt3DCore.QEntity(self.rootEntity)
-        # self.torusMesh = Qt3DExtras.QTorusMesh()
-        # self.torusMesh.setRadius(5)
-        # self.torusMesh.setMinorRadius(1)
-        # self.torusMesh.setRings(100)
-        # self.torusMesh.setSlices(20)
-        #
-        # self.torusTransform = Qt3DCore.QTransform()
-        # self.torusTransform.setScale3D(QVector3D(1.5, 1, 0.5))
-        # self.torusTransform.setRotation(QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 45))
-        #
-        # self.torusEntity.addComponent(self.torusMesh)
-        # self.torusEntity.addComponent(self.torusTransform)
-        # self.torusEntity.addComponent(self.material)
 
         # Vehicle
         self.vehicleEntity = Qt3DCore.QEntity(self.rootEntity)
