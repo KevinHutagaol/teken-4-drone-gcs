@@ -1,148 +1,165 @@
 from PyQt5 import QtCore, QtWidgets
-import pyqtgraph as pg
+from PyQt5.QtCore import pyqtSignal
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 import csv, os, numpy as np
 
 class RateTab(QtWidgets.QWidget):
+    pid_submitted = pyqtSignal(str, float, float, float)
+    load_from_drone = pyqtSignal(str)
+    
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Rate Control")
-        self.Kp_Rate = 1.0
-        self.Ki_Rate = 0.1
-        self.Kd_Rate = 0.01
+        self.pid_values = {
+            "Roll": {"P": 0.15, "I": 0.20, "D": 0.003},
+            "Pitch": {"P": 0.15, "I": 0.20, "D": 0.003}, 
+            "Yaw": {"P": 0.2, "I": 0.1, "D": 0.0}
+        }
         self.tuning_mode = "Roll"
         self.init_ui()
-        self.graphRate_timer = QtCore.QTimer()
-        self.graphRate_timer.timeout.connect(self.update_graphRate_plot)
-        self.graphRate_timer.start(1000)
+        self.update_pid_chart()
 
     def init_ui(self):
         main_layout = QtWidgets.QHBoxLayout(self)
+        
+        left_widget = QtWidgets.QWidget()
+        left_layout = QtWidgets.QVBoxLayout(left_widget)
+        
+        self.figure = Figure(figsize=(8, 6))
+        self.canvas = FigureCanvas(self.figure)
+        self.figure.patch.set_facecolor('white')
+        
+        left_layout.addWidget(self.canvas)
+        main_layout.addWidget(left_widget, stretch=2)
+        
+        right_widget = QtWidgets.QWidget()
+        right_layout = QtWidgets.QVBoxLayout(right_widget)
+        
+        tuning_group = QtWidgets.QGroupBox("Select Tuning :")
+        tuning_layout = QtWidgets.QHBoxLayout(tuning_group)
+        
+        self.radio_roll = QtWidgets.QRadioButton("Roll")
+        self.radio_pitch = QtWidgets.QRadioButton("Pitch")
+        self.radio_yaw = QtWidgets.QRadioButton("Yaw")
+        self.radio_roll.setChecked(True)
+        
+        self.radio_roll.toggled.connect(lambda: self.on_tuning_changed("Roll") if self.radio_roll.isChecked() else None)
+        self.radio_pitch.toggled.connect(lambda: self.on_tuning_changed("Pitch") if self.radio_pitch.isChecked() else None)
+        self.radio_yaw.toggled.connect(lambda: self.on_tuning_changed("Yaw") if self.radio_yaw.isChecked() else None)
+        
+        tuning_layout.addWidget(self.radio_roll)
+        tuning_layout.addWidget(self.radio_pitch)
+        tuning_layout.addWidget(self.radio_yaw)
+        right_layout.addWidget(tuning_group)
+        
+        # PID Parameter inputs
+        pid_widget = QtWidgets.QWidget()
+        pid_layout = QtWidgets.QFormLayout(pid_widget)
+        
+        self.p_spinbox = QtWidgets.QDoubleSpinBox()
+        self.p_spinbox.setRange(0, 100)
+        self.p_spinbox.setDecimals(2)
+        self.p_spinbox.setSingleStep(0.01)
+        self.p_spinbox.setValue(self.pid_values[self.tuning_mode]["P"])
+        self.p_spinbox.valueChanged.connect(self.on_pid_changed)
+        
+        self.i_spinbox = QtWidgets.QDoubleSpinBox()
+        self.i_spinbox.setRange(0, 100)
+        self.i_spinbox.setDecimals(2)
+        self.i_spinbox.setSingleStep(0.01)
+        self.i_spinbox.setValue(self.pid_values[self.tuning_mode]["I"])
+        self.i_spinbox.valueChanged.connect(self.on_pid_changed)
+        
+        self.d_spinbox = QtWidgets.QDoubleSpinBox()
+        self.d_spinbox.setRange(0, 100)
+        self.d_spinbox.setDecimals(2)
+        self.d_spinbox.setSingleStep(0.01)
+        self.d_spinbox.setValue(self.pid_values[self.tuning_mode]["D"])
+        self.d_spinbox.valueChanged.connect(self.on_pid_changed)
+        
+        pid_layout.addRow("P", self.p_spinbox)
+        pid_layout.addRow("I", self.i_spinbox)
+        pid_layout.addRow("D", self.d_spinbox)
+        right_layout.addWidget(pid_widget)
+        
+        # Control Buttons
+        button_layout1 = QtWidgets.QHBoxLayout()
+        self.btn_load = QtWidgets.QPushButton("Load from Drone")
+        self.btn_submit = QtWidgets.QPushButton("Submit to Drone")
+        
+        button_layout1.addWidget(self.btn_load)
+        button_layout1.addWidget(self.btn_submit)
+        right_layout.addLayout(button_layout1)
+        
+        self.btn_submit.clicked.connect(self.submit_pid_values)
+        self.btn_load.clicked.connect(self.load_pid_from_drone)
+        
+        main_layout.addWidget(right_widget, stretch=1)
 
-        # --- Grafik di kiri ---
-        graph_widget = QtWidgets.QWidget()
-        graph_layout = QtWidgets.QVBoxLayout(graph_widget)
-        self.graphRate_plot = pg.PlotWidget()
-        self.graphRate_plot.setBackground('w')
-        self.graphRate_plot.showGrid(x=True, y=True)
-        graph_layout.addWidget(self.graphRate_plot)
-        self.scrollbarrate = QtWidgets.QScrollBar(QtCore.Qt.Horizontal)
-        graph_layout.addWidget(self.scrollbarrate)
-        self.scrollbarrate.valueChanged.connect(self.update_graphRate_plot)
-        main_layout.addWidget(graph_widget, stretch=2)
-
-        # --- PID Gain & Control Button di kanan ---
-        control_widget = QtWidgets.QWidget()
-        control_layout = QtWidgets.QVBoxLayout(control_widget)
-
-        # PID Gain Box with Select Tuning
-        pid_group = QtWidgets.QGroupBox("PID Gain & Select Tuning")
-        pid_layout = QtWidgets.QHBoxLayout(pid_group)
-
-        self.tuning_select = QtWidgets.QComboBox()
-        self.tuning_select.addItems(["Roll", "Pitch", "Yaw"])
-        self.tuning_select.setCurrentIndex(0)
-        self.tuning_select.currentTextChanged.connect(self.on_tuning_changed)
-        pid_layout.addWidget(self.tuning_select)
-
-        self.kp_box = QtWidgets.QDoubleSpinBox()
-        self.kp_box.setPrefix("Kp: ")
-        self.kp_box.setValue(self.Kp_Rate)
-        self.kp_box.setDecimals(3)
-        self.kp_box.setSingleStep(0.01)
-        pid_layout.addWidget(self.kp_box)
-
-        self.ki_box = QtWidgets.QDoubleSpinBox()
-        self.ki_box.setPrefix("Ki: ")
-        self.ki_box.setValue(self.Ki_Rate)
-        self.ki_box.setDecimals(3)
-        self.ki_box.setSingleStep(0.01)
-        pid_layout.addWidget(self.ki_box)
-
-        self.kd_box = QtWidgets.QDoubleSpinBox()
-        self.kd_box.setPrefix("Kd: ")
-        self.kd_box.setValue(self.Kd_Rate)
-        self.kd_box.setDecimals(3)
-        self.kd_box.setSingleStep(0.01)
-        pid_layout.addWidget(self.kd_box)
-
-        control_layout.addWidget(pid_group)
-
-        # Button Box
-        btn_group = QtWidgets.QGroupBox("Control Buttons")
-        btn_layout = QtWidgets.QHBoxLayout(btn_group)
-        self.btn_pause = QtWidgets.QPushButton("Pause")
-        self.btn_continue = QtWidgets.QPushButton("Continue")
-        self.btn_auto = QtWidgets.QPushButton("Auto")
-        self.btn_submit = QtWidgets.QPushButton("Submit")
-        btn_layout.addWidget(self.btn_pause)
-        btn_layout.addWidget(self.btn_continue)
-        btn_layout.addWidget(self.btn_auto)
-        btn_layout.addWidget(self.btn_submit)
-        control_layout.addWidget(btn_group)
-
-        self.btn_pause.clicked.connect(self.pause_graphRate)
-        self.btn_continue.clicked.connect(self.continue_graphRate)
-        self.btn_submit.clicked.connect(self.submit_pid_gain)
-
-        main_layout.addWidget(control_widget, stretch=1)
-
-    def on_tuning_changed(self, text):
-        self.tuning_mode = text
-
-    def update_graphRate_plot(self):
-        detik, value, value_ubah = [], [], []
-        window_size = 10
-        if os.path.exists("log.csv"):
-            with open("log.csv", "r") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    try:
-                        detik.append(int(row["detik"]))
-                        value.append(float(row["value"]))
-                        value_ubah.append(float(row["value"]) * (self.Kp_Rate + self.Ki_Rate + self.Kd_Rate))
-                    except Exception:
-                        continue
-        if len(detik) > window_size:
-            self.scrollbarrate.setMaximum(len(detik) - window_size)
-        else:
-            self.scrollbarrate.setMaximum(0)
-            self.scrollbarrate.setValue(0)
-        start_idx = self.scrollbarrate.value()
-        end_idx = start_idx + window_size
-        detik_window = np.array(detik[start_idx:end_idx])
-        value_window = np.array(value[start_idx:end_idx])
-        value_ubah_window = np.array(value_ubah[start_idx:end_idx])
-
-        self.graphRate_plot.clear()
-        self.graphRate_plot.setBackground('k')  # Set background to black
-        self.graphRate_plot.setTitle(f"graphRate Live - {self.tuning_mode}", color='w')
-        self.graphRate_plot.setLabel('bottom', "Detik", color='w')
-        self.graphRate_plot.setLabel('left', "Value", color='w')
-
-        # Add legend with custom label colors
-        legend = self.graphRate_plot.addLegend()
-        legend.setBrush(pg.mkBrush(0, 0, 0, 200))  # legend background black
-
-        if detik_window.size and value_window.size:
-            curve1 = self.graphRate_plot.plot(
-                detik_window, value_window,
-                pen=pg.mkPen('g', width=2),
-                name='<span style="color:white;">Value</span>'
-            )
-            curve2 = self.graphRate_plot.plot(
-                detik_window, value_ubah_window,
-                pen=pg.mkPen('r', width=2),
-                name='<span style="color:red;">Value Ubah</span>'
-            )
-
-    def pause_graphRate(self):
-        self.graphRate_timer.stop()
-
-    def continue_graphRate(self):
-        self.graphRate_timer.start(1000)
-
-    def submit_pid_gain(self):
-        self.Kp_Rate = self.kp_box.value()
-        self.Ki_Rate = self.ki_box.value()
-        self.Kd_Rate = self.kd_box.value()
-        self.update_graphRate_plot()
+    def on_tuning_changed(self, mode):
+        self.tuning_mode = mode
+        self.update_pid_inputs()
+        self.update_pid_chart()
+        
+    def on_pid_changed(self):
+        self.pid_values[self.tuning_mode]["P"] = self.p_spinbox.value()
+        self.pid_values[self.tuning_mode]["I"] = self.i_spinbox.value()
+        self.pid_values[self.tuning_mode]["D"] = self.d_spinbox.value()
+        self.update_pid_chart()
+        
+    def update_pid_inputs(self):
+        self.p_spinbox.setValue(self.pid_values[self.tuning_mode]["P"])
+        self.i_spinbox.setValue(self.pid_values[self.tuning_mode]["I"])
+        self.d_spinbox.setValue(self.pid_values[self.tuning_mode]["D"])
+        
+    def update_pid_chart(self):
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+        
+        # Get current PID values
+        p_val = self.pid_values[self.tuning_mode]["P"]
+        i_val = self.pid_values[self.tuning_mode]["I"]
+        d_val = self.pid_values[self.tuning_mode]["D"]
+        
+        # Create bar chart
+        categories = ['P', 'I', 'D']
+        values = [p_val, i_val, d_val]
+        colors = ['red', 'blue', 'green']
+        
+        bars = ax.bar(categories, values, color=colors, alpha=0.7)
+        
+        # Add value labels on bars
+        for bar, value in zip(bars, values):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height + 0.05,
+                   f'{value:.3f}', ha='center', va='bottom')
+        
+        ax.set_title(f'Rate PID Parameters - {self.tuning_mode}')
+        ax.set_ylabel('Value')
+        ax.set_ylim(0, max(max(values) * 1.2, 5))
+        ax.grid(True, alpha=0.3)
+        
+        self.figure.tight_layout()
+        self.canvas.draw()
+        
+    def submit_pid_values(self):
+        p = self.pid_values[self.tuning_mode]['P']
+        i = self.pid_values[self.tuning_mode]['I']
+        d = self.pid_values[self.tuning_mode]['D']
+        
+        self.pid_submitted.emit(self.tuning_mode, p, i, d)
+        
+    def load_pid_from_drone(self):
+        self.load_from_drone.emit(self.tuning_mode)
+        
+    def update_pid_values_from_drone(self, axis, params):
+        if axis in self.pid_values and params:
+            self.pid_values[axis]["P"] = params.get("p", 0.0)
+            self.pid_values[axis]["I"] = params.get("i", 0.0)
+            self.pid_values[axis]["D"] = params.get("d", 0.0)
+            
+            if axis == self.tuning_mode:
+                self.update_pid_inputs()
+                self.update_pid_chart()
