@@ -22,9 +22,14 @@ import resources_rc
 
 TAKEOFF_ALTITUDE = 5.0
 
+connect_thread = None
 
 def sigint_handler(*args):
     print("\nShutting Down")
+
+    if connect_thread:
+        connect_thread.join()
+
     QApplication.quit()
     exit(0)
 
@@ -40,6 +45,7 @@ async def connect_to_drone(drone: "DroneModel", altitude: float):
         await asyncio.sleep(1.0)
 
     await asyncio.sleep(2.0)
+
     drone.takeoff_sync(altitude)
 
 
