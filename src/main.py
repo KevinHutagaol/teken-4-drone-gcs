@@ -1,5 +1,7 @@
+import asyncio
 import sys
 import signal
+import threading
 
 from PyQt5.QtCore import QCoreApplication, Qt, QSize
 from PyQt5.QtWidgets import QApplication
@@ -18,11 +20,26 @@ QCoreApplication.setAttribute(Qt.AA_UseOpenGLES)
 # noinspection PyUnresolvedReferences
 import resources_rc
 
+TAKEOFF_ALTITUDE = 5.0
+
 
 def sigint_handler(*args):
     print("\nShutting Down")
     QApplication.quit()
     exit(0)
+
+
+async def connect_to_drone(drone: "DroneModel", altitude: float):
+    while not drone.get_vehicle_status().heartbeat:
+        print("Waiting for heartbeat...")
+        await asyncio.sleep(2.0)
+
+    drone.arm_sync()
+
+    while not drone.get_vehicle_status().armed:
+        await asyncio.sleep(1.0)
+
+    drone.takeoff_sync(altitude)
 
 
 if __name__ == "__main__":
@@ -40,13 +57,11 @@ if __name__ == "__main__":
 
     timeout = 15
 
-    while not drone.get_vehicle_status().heartbeat:
-        print("Waiting for heartbeat...")
-        time.sleep(0.5)
-        app.processEvents()
+    connect_thread = threading.Thread(
+        target=asyncio.run,
+        args=(connect_to_drone(drone, TAKEOFF_ALTITUDE),)
+    )
 
-    if drone.get_vehicle_status().heartbeat:
-        drone.arm_sync()
-        drone.takeoff_sync(5)
+    connect_thread.start()
 
     sys.exit(app.exec_())
