@@ -1,19 +1,21 @@
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtWidgets
-import pyqtgraph as pg
-import csv, os, numpy as np
 
 class RateTab(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Rate Control")
-        self.Kp_Rate = 1.0
-        self.Ki_Rate = 0.1
-        self.Kd_Rate = 0.01
+        self.default_Kp = 1.0
+        self.default_Ki = 0.1
+        self.default_Kd = 0.01
+        self.Kp_Rate = self.default_Kp
+        self.Ki_Rate = self.default_Ki
+        self.Kd_Rate = self.default_Kd
         self.tuning_mode = "Roll"
         self.init_ui()
-        self.graphRate_timer = QtCore.QTimer()
-        self.graphRate_timer.timeout.connect(self.update_graphRate_plot)
-        self.graphRate_timer.start(1000)
+        self.init_graphRate_plot()
+        self.update_graphRate_plot()  # Tampilkan chart awal
 
     def init_ui(self):
         main_layout = QtWidgets.QHBoxLayout(self)
@@ -21,20 +23,14 @@ class RateTab(QtWidgets.QWidget):
         # --- Grafik di kiri ---
         graph_widget = QtWidgets.QWidget()
         graph_layout = QtWidgets.QVBoxLayout(graph_widget)
-        self.graphRate_plot = pg.PlotWidget()
-        self.graphRate_plot.setBackground('w')
-        self.graphRate_plot.showGrid(x=True, y=True)
-        graph_layout.addWidget(self.graphRate_plot)
-        self.scrollbarrate = QtWidgets.QScrollBar(QtCore.Qt.Horizontal)
-        graph_layout.addWidget(self.scrollbarrate)
-        self.scrollbarrate.valueChanged.connect(self.update_graphRate_plot)
+        self.graphRate = QtWidgets.QWidget()
+        graph_layout.addWidget(self.graphRate)
         main_layout.addWidget(graph_widget, stretch=2)
 
         # --- PID Gain & Control Button di kanan ---
         control_widget = QtWidgets.QWidget()
         control_layout = QtWidgets.QVBoxLayout(control_widget)
 
-        # PID Gain Box with Select Tuning
         pid_group = QtWidgets.QGroupBox("PID Gain & Select Tuning")
         pid_layout = QtWidgets.QHBoxLayout(pid_group)
 
@@ -45,21 +41,21 @@ class RateTab(QtWidgets.QWidget):
         pid_layout.addWidget(self.tuning_select)
 
         self.kp_box = QtWidgets.QDoubleSpinBox()
-        self.kp_box.setPrefix("Kp: ")
+        self.kp_box.setPrefix("P: ")
         self.kp_box.setValue(self.Kp_Rate)
         self.kp_box.setDecimals(3)
         self.kp_box.setSingleStep(0.01)
         pid_layout.addWidget(self.kp_box)
 
         self.ki_box = QtWidgets.QDoubleSpinBox()
-        self.ki_box.setPrefix("Ki: ")
+        self.ki_box.setPrefix("I: ")
         self.ki_box.setValue(self.Ki_Rate)
         self.ki_box.setDecimals(3)
         self.ki_box.setSingleStep(0.01)
         pid_layout.addWidget(self.ki_box)
 
         self.kd_box = QtWidgets.QDoubleSpinBox()
-        self.kd_box.setPrefix("Kd: ")
+        self.kd_box.setPrefix("D: ")
         self.kd_box.setValue(self.Kd_Rate)
         self.kd_box.setDecimals(3)
         self.kd_box.setSingleStep(0.01)
@@ -67,7 +63,6 @@ class RateTab(QtWidgets.QWidget):
 
         control_layout.addWidget(pid_group)
 
-        # Button Box
         btn_group = QtWidgets.QGroupBox("Control Buttons")
         btn_layout = QtWidgets.QHBoxLayout(btn_group)
         self.btn_pause = QtWidgets.QPushButton("Pause")
@@ -83,66 +78,75 @@ class RateTab(QtWidgets.QWidget):
         self.btn_pause.clicked.connect(self.pause_graphRate)
         self.btn_continue.clicked.connect(self.continue_graphRate)
         self.btn_submit.clicked.connect(self.submit_pid_gain)
+        self.btn_auto.clicked.connect(self.reset_pid_gain)
 
         main_layout.addWidget(control_widget, stretch=1)
 
     def on_tuning_changed(self, text):
         self.tuning_mode = text
 
+    def init_graphRate_plot(self):
+        self.graphRate_fig = Figure(figsize=(4, 2), dpi=100)
+        self.graphRate_ax = self.graphRate_fig.add_subplot(111)
+        self.graphRate_canvas = FigureCanvas(self.graphRate_fig)
+        layout = QtWidgets.QVBoxLayout(self.graphRate)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.graphRate_canvas)
+
     def update_graphRate_plot(self):
-        detik, value, value_ubah = [], [], []
-        window_size = 10
-        if os.path.exists("log.csv"):
-            with open("log.csv", "r") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    try:
-                        detik.append(int(row["detik"]))
-                        value.append(float(row["value"]))
-                        value_ubah.append(float(row["value"]) * (self.Kp_Rate + self.Ki_Rate + self.Kd_Rate))
-                    except Exception:
-                        continue
-        if len(detik) > window_size:
-            self.scrollbarrate.setMaximum(len(detik) - window_size)
-        else:
-            self.scrollbarrate.setMaximum(0)
-            self.scrollbarrate.setValue(0)
-        start_idx = self.scrollbarrate.value()
-        end_idx = start_idx + window_size
-        detik_window = np.array(detik[start_idx:end_idx])
-        value_window = np.array(value[start_idx:end_idx])
-        value_ubah_window = np.array(value_ubah[start_idx:end_idx])
+        # Ambil nilai Kp, Ki, Kd dari variabel (bukan spinbox langsung)
+        w = self.graphRate.width() / self.graphRate_canvas.figure.dpi
+        h = self.graphRate.height() / self.graphRate_canvas.figure.dpi
+        self.graphRate_fig.set_size_inches(max(w, 2), max(h, 1), forward=True)
+        
+        kp = self.Kp_Rate
+        ki = self.Ki_Rate
+        kd = self.Kd_Rate
 
-        self.graphRate_plot.clear()
-        self.graphRate_plot.setBackground('k')  # Set background to black
-        self.graphRate_plot.setTitle(f"graphRate Live - {self.tuning_mode}", color='w')
-        self.graphRate_plot.setLabel('bottom', "Detik", color='w')
-        self.graphRate_plot.setLabel('left', "Value", color='w')
+        x_labels = ['P', 'I', 'D']
+        y_values = [kp, ki, kd]
+        bar_colors = ['red', 'green', 'blue']
 
-        # Add legend with custom label colors
-        legend = self.graphRate_plot.addLegend()
-        legend.setBrush(pg.mkBrush(0, 0, 0, 200))  # legend background black
+        self.graphRate_ax.clear()
+        bars = self.graphRate_ax.bar(x_labels, y_values, color=bar_colors, width=0.6)
+        self.graphRate_ax.set_xlabel('Komponen')
+        self.graphRate_ax.set_ylabel('Nilai')
+        self.graphRate_ax.set_title(f"PID - {self.tuning_mode} Rate")
+        self.graphRate_ax.grid(True, linestyle='--', alpha=0.5)
 
-        if detik_window.size and value_window.size:
-            curve1 = self.graphRate_plot.plot(
-                detik_window, value_window,
-                pen=pg.mkPen('g', width=2),
-                name='<span style="color:white;">Value</span>'
+        # Tambahkan value di atas bar
+        for bar in bars:
+            height = bar.get_height()
+            self.graphRate_ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                height,
+                f"{height:.3f}",
+                ha='center',
+                va='bottom',
+                fontsize=10,
+                color='black'
             )
-            curve2 = self.graphRate_plot.plot(
-                detik_window, value_ubah_window,
-                pen=pg.mkPen('r', width=2),
-                name='<span style="color:red;">Value Ubah</span>'
-            )
+
+        self.graphRate_fig.tight_layout()
+        self.graphRate_canvas.draw()
 
     def pause_graphRate(self):
-        self.graphRate_timer.stop()
+        pass  # Tidak perlu timer, chart hanya update saat submit
 
     def continue_graphRate(self):
-        self.graphRate_timer.start(1000)
+        pass  # Tidak perlu timer, chart hanya update saat submit
 
     def submit_pid_gain(self):
         self.Kp_Rate = self.kp_box.value()
         self.Ki_Rate = self.ki_box.value()
         self.Kd_Rate = self.kd_box.value()
+        self.update_graphRate_plot()
+
+    def reset_pid_gain(self):
+        self.Kp_Rate = self.default_Kp
+        self.Ki_Rate = self.default_Ki
+        self.Kd_Rate = self.default_Kd
+        self.kp_box.setValue(self.default_Kp)
+        self.ki_box.setValue(self.default_Ki)
+        self.kd_box.setValue(self.default_Kd)
         self.update_graphRate_plot()
