@@ -83,7 +83,7 @@ class MapDisplayWindow(QObject):
 
     @pyqtSlot(int)
     def _on_del_button_group_clicked(self, button_id):
-        print(button_id)
+        # print(button_id)
         self._model.remove_waypoint(button_id)
         self._view.render_map_waypoints_ui(self._model.get_vehicle_status().position, self._model.get_waypoints(), -1)
         self._view.render_map_polylines_ui(self._model.get_vehicle_status().position, self._model.get_waypoints())

@@ -419,7 +419,7 @@ class DroneModel(QObject):
                         vertical_distance = np.fabs(position.relative_altitude_m - self._waypoints[0].altitude)
                         if (horizontal_distance < ALLOWABLE_HORIZONTAL_DISTANCE_TO_WAYPOINT) and (
                                 vertical_distance < ALLOWABLE_VERTICAL_DISTANCE_TO_WAYPOINT):
-                            print("MOVE COMPLETE")
+                            # print("MOVE COMPLETE")
                             self._waypoints.pop(0)
                             self.ui_update_signal.emit(True)
         except Exception as e:
