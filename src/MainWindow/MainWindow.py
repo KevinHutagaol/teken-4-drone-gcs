@@ -46,6 +46,10 @@ class MainWindow(QObject):
             lambda checked: self._toggle_window(self._view.pid_tuning_window, checked)
         )
 
+        self._view.pid_tuning_window.window_closed_signal.connect(
+            lambda: self._view.set_pid_tuning_checked(False)
+        )
+
         self._view.data_logging_button.clicked.connect(
             lambda checked: self._toggle_window(self._view.data_logging_window, checked)
         )
@@ -200,6 +204,10 @@ class MainWindowUI(QMainWindow):
     @pyqtSlot(bool)
     def set_data_log_checked(self, checked):
         self.data_logging_button.setChecked(checked)
+
+    @pyqtSlot(bool)
+    def set_pid_tuning_checked(self, checked):
+        self.pid_tuning_button.setChecked(checked)
 
     def closeEvent(self, event):
         event.ignore()
