@@ -12,7 +12,8 @@ dependencies = [
     "folium",
     "dotenv",
     "pyqtgraph",
-    "pandas"
+    "pandas",
+    "pyside6"
 ]
 
 readme = "README.md"
