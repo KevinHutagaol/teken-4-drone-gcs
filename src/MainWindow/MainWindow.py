@@ -9,9 +9,11 @@ from PidTuning.PidTuningWindowUI import PidTuningWindowUI
 
 from DroneModel import DroneModel
 
-from MainWindow.DroneVisualisation import DroneVisualisationUI
+from MainWindow.DroneVisualisation import DroneVisualisationUI, DroneVisualisation
 from MainWindow.VehicleCondition import VehicleConditionUI
 from MainWindow.VehicleDirection import VehicleDirectionUI
+from VehicleStatus import Position
+from VehicleStatus import VehicleStatus
 
 
 class MainWindow(QObject):
@@ -21,6 +23,7 @@ class MainWindow(QObject):
 
         self._model = model
         self.map_display_window_controller = MapDisplayWindow(view=self._view.map_display_window, model=self._model)
+        self.drone_visualization_controller = DroneVisualisation(view=self._view.drone_visualisation_widget)
 
         self._model.ui_update_signal.connect(self.update_ui)
 
@@ -47,12 +50,24 @@ class MainWindow(QObject):
             lambda: self._view.set_data_log_checked(False)
         )
 
-    @pyqtSlot()
-    def update_ui(self):
-        self.update_map_display_ui()
+    @pyqtSlot(bool)
+    def update_ui(self, waypoints_updated: bool):
+        vehicle_status = self._model.get_vehicle_status()
+        waypoints = self._model.get_waypoints()
 
-    def update_map_display_ui(self):
-        self.map_display_window_controller.update_map_on_drone_move()
+        self.update_map_display_ui(vehicle_status, waypoints, waypoints_updated)
+
+    def update_map_display_ui(self, vehicle_status: VehicleStatus, waypoints: list['Position'], waypoints_updated: bool):
+        self.map_display_window_controller.update_map_on_drone_move(vehicle_status, waypoints, waypoints_updated)
+        self._update_values(vehicle_status)
+
+    def _update_values(self, vehicle_status: 'VehicleStatus'):
+        self._view.vehicle_direction_widget.set_direction_values(vehicle_status.position, vehicle_status.attitude,
+                                                                 vehicle_status.velocity, vehicle_status.flight_mode)
+        self._view.vehicle_condition_widget.set_condition_values(vehicle_status.heartbeat, vehicle_status.in_air,
+                                                                 vehicle_status.battery_voltage,
+                                                                 vehicle_status.battery_percentage)
+        self.drone_visualization_controller.update_drone_3d_model(vehicle_status.attitude)
 
     @staticmethod
     def _toggle_window(window, state):

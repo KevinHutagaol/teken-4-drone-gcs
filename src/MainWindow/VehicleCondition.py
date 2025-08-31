@@ -34,13 +34,13 @@ class VehicleConditionUI(QGroupBox):
         self.layout = QVBoxLayout()
 
         # ---
-        self.heartbeat = False
         self.heartbeat_widget = QWidget()
         self.heartbeat_layout = QHBoxLayout()
         self.heartbeat_widget.setLayout(self.heartbeat_layout)
         self.heartbeat_title = QLabel("Heartbeat")
         self.heartbeat_title.setFixedWidth(125)
-        self.heartbeat_label = QLabel("ON" if self.heartbeat else "OFF")
+        self.heartbeat_label = QLabel("Offline")
+        self.heartbeat_label.setStyleSheet("font-weight: bold; color: #800000")
         self.heartbeat_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.heartbeat_layout.addWidget(self.heartbeat_title)
         self.heartbeat_layout.addWidget(self.heartbeat_label)
@@ -100,3 +100,17 @@ class VehicleConditionUI(QGroupBox):
         self.layout.addWidget(self.battery_widget)
 
         self.setLayout(self.layout)
+
+
+
+    def set_condition_values(self, heartbeat: bool, in_air, battery_voltage: float, battery_percentage: float):
+        if heartbeat:
+            self.heartbeat_label.setText("Online")
+            self.heartbeat_label.setStyleSheet("font-weight: bold; color: #008000")
+        else:
+            self.heartbeat_label.setText("Offline")
+            self.heartbeat_label.setStyleSheet("font-weight: bold; color: #800000")
+        self.in_air_label.setText(f"{'Yes' if in_air else 'No' }")
+        self.battery_voltage_label.setText(f"{battery_voltage:.2f} V")
+        self.battery_percentage_widget.setValue(int(battery_percentage))
+

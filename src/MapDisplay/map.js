@@ -4,35 +4,6 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 20, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
-var realtime = L.realtime((responseHandler, errorHandler) => {
-    let url = 'https://api.wheretheiss.at/v1/satellites/25544';
-
-    fetch(url)
-        .then((response) => {
-            return response.json().then((data) => {
-                var {id, longitude, latitude} = data;
-
-                return {
-                    'type': 'FeatureCollection', 'features': [{
-                        'type': 'Feature', 'geometry': {
-                            'type': 'Point', 'coordinates': [longitude, latitude]
-                        }, 'properties': {
-                            'id': id
-                        }
-                    }]
-                };
-            })
-        })
-        .then(responseHandler)
-        .catch(errorHandler);
-}, {
-    "start": true, "interval": 5000, "removeMissing": false,
-});
-map.addLayer(realtime._container);
-
-
-realtime.addTo(map);
-
 
 var mouse_position = new L.Control.MousePosition({
     "position": "topright",

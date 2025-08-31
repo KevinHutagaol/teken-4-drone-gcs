@@ -16,7 +16,8 @@ ALLOWABLE_VERTICAL_DISTANCE_TO_WAYPOINT = 1.0
 
 
 class DroneModel(QObject):
-    ui_update_signal = pyqtSignal()
+    ui_update_signal = pyqtSignal(bool)
+
 
     def __init__(self, connection_address: str = "udp://:14540"):
         super().__init__()
@@ -193,6 +194,7 @@ class DroneModel(QObject):
                 return {"p": p, "i": i, "d": d}
             return {"p": 0.0, "i": 0.0, "d": 0.0}
         except Exception as e:
+            print(e)
             return {"p": 0.0, "i": 0.0, "d": 0.0}
     
     def get_velocity_pid_params_sync(self, axis: str = "x"):
@@ -384,15 +386,15 @@ class DroneModel(QObject):
         if self.ui_updater_task:
             self.ui_updater_task.cancel()
 
-    async def _update_ui_periodic(self, interval: float = 0.5):
+    async def _update_ui_periodic(self, interval: float = 0.1):
         while self.running:
-            self.ui_update_signal.emit()
+            self.ui_update_signal.emit(False)
 
             await asyncio.sleep(interval)
 
     async def _monitor_health(self):
         try:
-            async for health in self.drone.telemetry.health():
+            async for _ in self.drone.telemetry.health():
                 if not self.running:
                     break
         except Exception as e:
@@ -419,6 +421,7 @@ class DroneModel(QObject):
                                 vertical_distance < ALLOWABLE_VERTICAL_DISTANCE_TO_WAYPOINT):
                             print("MOVE COMPLETE")
                             self._waypoints.pop(0)
+                            self.ui_update_signal.emit(True)
         except Exception as e:
             print(e)
 
@@ -523,6 +526,7 @@ class DroneModel(QObject):
                 return False
             return True
         except ActionError as e:
+            print(e)
             return False
 
     def arm_sync(self):
@@ -533,6 +537,7 @@ class DroneModel(QObject):
             await self.drone.action.disarm()
             return True
         except ActionError as e:
+            print(e)
             return False
 
     def disarm_sync(self):
