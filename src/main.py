@@ -1,14 +1,11 @@
-import os
 import sys
 import signal
 
-from PyQt5.QtCore import QCoreApplication, Qt
+from PyQt5.QtCore import QCoreApplication, Qt, QSize
 from PyQt5.QtWidgets import QApplication
 from dotenv import load_dotenv
 
 import time
-import asyncio
-from VehicleStatus import VehicleStatus
 from DroneModel import DroneModel
 
 from MainWindow.MainWindow import MainWindow, MainWindowUI

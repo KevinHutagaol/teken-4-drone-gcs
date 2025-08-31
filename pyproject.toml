@@ -11,8 +11,8 @@ dependencies = [
     "numpy",
     "folium",
     "dotenv",
-    "pandas",
-    "pyqtgraph"
+    "pyqtgraph",
+    "pandas"
 ]
 
 readme = "README.md"

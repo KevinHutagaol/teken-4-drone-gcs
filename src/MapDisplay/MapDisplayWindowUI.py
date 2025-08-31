@@ -7,7 +7,7 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QWidget, QLabel, QSizePolicy, QHBoxLayout, QVBoxLayout, QGroupBox, QPushButton, QTreeWidget, \
     QTreeWidgetItem, QHeaderView, QLineEdit, QButtonGroup
 
-from VehicleStatus import Position
+from VehicleStatus import Position, VehicleStatus
 from DroneModel import DroneModel
 
 
@@ -20,6 +20,7 @@ class MapDisplayWindow(QObject):
         self._model = model
         self._view.connect_signals_and_slots()
 
+        self._map_ready = False
         self._setup_map_logic()
 
     def _setup_map_logic(self):
@@ -34,12 +35,16 @@ class MapDisplayWindow(QObject):
 
         self._view.button_group_clicked_signal.connect(self._on_del_button_group_clicked)
 
-        self.update_map_on_drone_move()
+        self._map_ready = True
 
-    def update_map_on_drone_move(self):
-        self._view.render_map_waypoints_ui(self._model.get_vehicle_status().position, self._model.get_waypoints(), -1)
-        self._view.render_map_polylines_ui(self._model.get_vehicle_status().position, self._model.get_waypoints())
-        self._view.render_list_ui(self._model.get_waypoints())
+    def update_map_on_drone_move(self, vehicle_status: VehicleStatus, waypoints: list['Position'],
+                                 waypoints_updated: bool):
+        if self._map_ready:
+            self._view.render_map_polylines_ui(vehicle_status.position, waypoints)
+            self._view.render_map_waypoints_ui(vehicle_status.position, waypoints, 0 if waypoints_updated else -1)
+
+        if waypoints_updated:
+            self._view.render_list_ui(waypoints)
 
     @pyqtSlot(bool)
     def _on_add_waypoint_button_clicked(self, checked):
@@ -72,8 +77,6 @@ class MapDisplayWindow(QObject):
         self._view.render_map_waypoints_ui(self._model.get_vehicle_status().position, self._model.get_waypoints(), -1)
         self._view.render_map_polylines_ui(self._model.get_vehicle_status().position, self._model.get_waypoints())
         self._view.render_list_ui(self._model.get_waypoints())
-
-        # print(self._view.get_current_selected_list_item().data())
 
         self.is_add_waypoint_button_checked = False
         self._view.map_on_add_waypoint_button_clicked(False)
@@ -292,7 +295,7 @@ class MapDisplayWindowUI(QWidget):
             # print(self.delete_list_item_button_group.buttons())
 
         # if cur_index is not None:
-            # self.list.setCurrentIndex(cur_index)
+        # self.list.setCurrentIndex(cur_index)
 
     def render_map_waypoints_ui(self, drone_position: 'Position', waypoints: list['Position'],
                                 selected_item_num: int):
