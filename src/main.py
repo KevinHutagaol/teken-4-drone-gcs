@@ -39,6 +39,7 @@ async def connect_to_drone(drone: "DroneModel", altitude: float):
     while not drone.get_vehicle_status().armed:
         await asyncio.sleep(1.0)
 
+    await asyncio.sleep(2.0)
     drone.takeoff_sync(altitude)
 
 
